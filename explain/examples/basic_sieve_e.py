@@ -1,11 +1,18 @@
 #!/usr/bin/python
 
+##
+# Building block:  A very basic Sieve of Eratosthenes
+# that generates primes up to n.
+##
+
 import math
 
 N=100000
 
+isprime = [True]
 
 def genprime(n):
+  global isprime
   isprime = [True] * (N+1)
   sN = int(math.floor(math.sqrt(n)))
 
@@ -18,4 +25,9 @@ def genprime(n):
                   isprime[ni] = False
                   ni += i
 
-print list(genprime(10))
+def is_prime_p(n):
+  global isprime
+  return isprime[n]
+
+if __name__ == "__main__":
+    print list(genprime(10))
