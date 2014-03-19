@@ -2,7 +2,7 @@
 
 import basic_sieve_e
 
-N=100000
+N=10000000
 
 def sieve_is_valid_pow(n):
     for offset in [0, 4, 6, 10, 12, 16]:

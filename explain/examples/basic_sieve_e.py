@@ -7,13 +7,11 @@
 
 import math
 
-N=100000
-
 isprime = [True]
 
 def genprime(n):
   global isprime
-  isprime = [True] * (N+1)
+  isprime = [True] * (n+1)
   sN = int(math.floor(math.sqrt(n)))
 
   for i in range(3, n+1, 2): 
