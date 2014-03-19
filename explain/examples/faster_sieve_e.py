@@ -18,10 +18,10 @@ def genprime(n):
       if (isprime[i]):
           yield i
           if (i < sN):
-              ni = 2*i
+              ni = 3*i
               while (ni <= n):
                   isprime[ni] = False
-                  ni += i
+                  ni += 2*i
 
 def is_prime_p(n):
   global isprime
@@ -33,7 +33,6 @@ def sieve_is_valid_pow(n):
     if not isprime[n+offset]:
       return False
   return True
-    
 
 if __name__ == "__main__":
     print list(genprime(50))
