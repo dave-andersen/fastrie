@@ -1,8 +1,11 @@
 #!/usr/bin/python
 
 import basic_sieve_e
+import sys
 
 N=10000000
+if len(sys.argv) > 1:
+    N = int(sys.argv[1])
 
 for candidate in basic_sieve_e.genprime(N):
     # Skip the first spots until our sieve will have eliminated
