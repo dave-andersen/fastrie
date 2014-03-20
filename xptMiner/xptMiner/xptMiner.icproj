@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioProject
+	ProjectType="Intel C++ Project"
+	Version="11.1"
+	Name="xptMiner"
+	ProjectGUID="{D04C1868-C42A-459C-B2E4-16DA915CD23F}"
+	VCNestedProjectGUID="{B4531908-6778-4233-914B-170FCB94681A}"
+	VCNestedProjectFileName="xptMiner.vcproj">
+	<Configurations>
+		<Configuration
+			Name="Release|x64">
+			<Tool
+				Name="CppCmplrTool"
+				Optimization="1000"
+				GlobalOptimizations="true"
+				UseProcessorExtensions="0"/>
+		</Configuration>
+	</Configurations>
+	<Files/>
+</VisualStudioProject>

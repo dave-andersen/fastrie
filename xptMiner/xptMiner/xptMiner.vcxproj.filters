@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\jhlib">
+      <UniqueIdentifier>{8234dd40-574b-4521-9ae6-b3012fe3b2e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\algorithm">
+      <UniqueIdentifier>{a9cbc9c8-8aeb-441d-aa2c-a7c6bb7f3fa5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\algorithm\protoshares">
+      <UniqueIdentifier>{b1c2e1b1-658c-44c9-8773-c8375c28cef2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\algorithm\scrypt">
+      <UniqueIdentifier>{1d4a91df-1a2d-4608-bce3-ad75ac892ebe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\algorithm\primecoin">
+      <UniqueIdentifier>{a38ac5e2-8c53-4935-a2ef-49a66f0aaa4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\algorithm\metiscoin">
+      <UniqueIdentifier>{ec4d928c-2c94-4e64-965b-c05e5ea1c08f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\crypto">
+      <UniqueIdentifier>{857c48bb-3f24-468d-b5e0-ff1e3cae879b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{69bc64ba-b22c-4c62-8289-4835cd94a6c0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\xpt">
+      <UniqueIdentifier>{7e6ec1e6-907a-4f6a-9784-8badc0e799ff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="global.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="jhlib.h">
+      <Filter>Source Files\jhlib</Filter>
+    </ClInclude>
+    <ClInclude Include="algorithm.h">
+      <Filter>Source Files\algorithm</Filter>
+    </ClInclude>
+    <ClInclude Include="scrypt.h">
+      <Filter>Source Files\algorithm\scrypt</Filter>
+    </ClInclude>
+    <ClInclude Include="aes_helper.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="sha2.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="sph_keccak.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="sph_metis.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="sph_shavite.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="sph_types.h">
+      <Filter>Source Files\crypto</Filter>
+    </ClInclude>
+    <ClInclude Include="transaction.h">
+      <Filter>Source Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="xptClient.h">
+      <Filter>Source Files\xpt</Filter>
+    </ClInclude>
+    <ClInclude Include="xptServer.h">
+      <Filter>Source Files\xpt</Filter>
+    </ClInclude>
+    <ClInclude Include="ticker.h">
+      <Filter>Source Files\util</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="jhlib.cpp">
+      <Filter>Source Files\jhlib</Filter>
+    </ClCompile>
+    <ClCompile Include="protosharesMiner.cpp">
+      <Filter>Source Files\algorithm\protoshares</Filter>
+    </ClCompile>
+    <ClCompile Include="scrypt.cpp">
+      <Filter>Source Files\algorithm\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="scryptMinerCPU.cpp">
+      <Filter>Source Files\algorithm\scrypt</Filter>
+    </ClCompile>
+    <ClCompile Include="primecoinMiner.cpp">
+      <Filter>Source Files\algorithm\primecoin</Filter>
+    </ClCompile>
+    <ClCompile Include="metiscoinMiner.cpp">
+      <Filter>Source Files\algorithm\metiscoin</Filter>
+    </ClCompile>
+    <ClCompile Include="keccak.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="metis.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="sha2.cpp">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="shavite.c">
+      <Filter>Source Files\crypto</Filter>
+    </ClCompile>
+    <ClCompile Include="transaction.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="xptClient.cpp">
+      <Filter>Source Files\xpt</Filter>
+    </ClCompile>
+    <ClCompile Include="xptClientPacketHandler.cpp">
+      <Filter>Source Files\xpt</Filter>
+    </ClCompile>
+    <ClCompile Include="xptPacketbuffer.cpp">
+      <Filter>Source Files\xpt</Filter>
+    </ClCompile>
+    <ClCompile Include="xptServer.cpp">
+      <Filter>Source Files\xpt</Filter>
+    </ClCompile>
+    <ClCompile Include="xptServerPacketHandler.cpp">
+      <Filter>Source Files\xpt</Filter>
+    </ClCompile>
+    <ClCompile Include="ticker.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
