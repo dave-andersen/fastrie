@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <cstring>
 #include <sys/time.h>
-#include <atomic>
 #define MAX_TRANSACTIONS	(4096)
 
 // miner version string (for pool statistic)
@@ -70,7 +69,7 @@ struct
 	uint32	txHashCount;
 }workDataSource;
 
-std::atomic<uint32_t> uniqueMerkleSeedGenerator;
+uint32_t uniqueMerkleSeedGenerator;
 uint32 miningStartTime = 0;
 
 /*
