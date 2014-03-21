@@ -701,8 +701,8 @@ void xptMiner_xptQueryWorkLoop()
 	  float donAmount = minerSettings.requestTarget.donationPercent;
 	  if (donAmount > 1.5) { 
 	    donAmount -= 0.5f;
-	    xptClient_addDeveloperFeeEntry(xptClient, "RDrQYV7VHbnzUDX8BmcjoradKGVQaBcXXi", getFeeFromDouble(donAmount), false);  // jh00
-	    xptClient_addDeveloperFeeEntry(xptClient, "RNh5PSLpPmkNxB3PgoLnKzpM75rmkzfz5y", getFeeFromDouble(donAmount), false);  // clintar, windows port
+	    xptClient_addDeveloperFeeEntry(xptClient, "RDrQYV7VHbnzUDX8BmcjoradKGVQaBcXXi", getFeeFromDouble(0.25f), false);  // jh00
+	    xptClient_addDeveloperFeeEntry(xptClient, "RNh5PSLpPmkNxB3PgoLnKzpM75rmkzfz5y", getFeeFromDouble(0.25f), false);  // clintar, windows port
 	  }
 	  xptClient_addDeveloperFeeEntry(xptClient, "RUhMA8bvsr48aC3WVj3aGf5p1zytPSz59o", getFeeFromDouble(donAmount), false);  // dga
 	}

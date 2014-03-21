@@ -544,13 +544,13 @@ bool xptClient_process(xptClient_t* xptClient)
 	{
 #ifdef _WIN32
 		// receive error, is it a real error or just because of non blocking sockets?
-		if( WSAGetLastError() != WSAEWOULDBLOCK )
+		if( WSAGetLastError() != WSAEWOULDBLOCK || r == 0)
 		{
 			xptClient->disconnected = true;
 			return false;
 		}
 #else
-    if(errno != EAGAIN)
+    if(errno != EAGAIN || r == 0)
     {
 		xptClient->disconnected = true;
 		return false;
