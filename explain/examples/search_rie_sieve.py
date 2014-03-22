@@ -45,19 +45,6 @@ for p in faster_sieve_e.genprime(max_sieve_prime):
         index = ((p - candidate_mod_p)*inverse)%p
         sieve_loc.append(index)
 
-def notworking():
-    inverse = invert_mod.modinv(primorial, p)
-    candidate_mod_p = start_candidate % p
-
-    for o in tuple_offsets:
-        offset_remainder = (candidate_mod_p + o) % p
-        if p > offset_remainder:
-            offset_remainder = p - offset_remainder
-        else:
-            offset_remainder = -offset_remainder
-        i = ((offset_remainder%p)*inverse) % p
-        sieve_loc.append(i)
-
 sieve = [True] * sievesize
 loop_count = 0
 
