@@ -2,7 +2,7 @@
 
 import fermat_test
 
-T=10**12  # one trillion
+T=10**15  # one trillion
 
 primorial = 210
 offset = 97
