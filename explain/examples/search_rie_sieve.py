@@ -6,7 +6,6 @@ import array
 import sys
 import invert_mod
 
-#T=10**15  # one trillion
 # Target from first block in the Riecoin blockchain
 T=0x801A2F60588BF10BB614D6796A726025F88C7156E3FBDF68685FC0617F4266358C0000000000
 print T
@@ -62,8 +61,7 @@ while True:
             sieve_loc[sieve_loc_index] = o - sievesize
             sieve_loc_index += 1
 
-    # Step 2:  Test candidates
-    print "Testing"
+    print "Testing Candidates"
 
     for n in range(0, sievesize):
         if sieve[n]:
