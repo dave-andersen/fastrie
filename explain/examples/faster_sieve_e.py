@@ -13,8 +13,11 @@ def genprime(n):
   global isprime
   isprime = [True] * ((n+2)/2)
   sN = int(math.floor(math.sqrt(n)))
-
+  skip_other = True
   for i in range(3, n+1, 2):
+      skip_other = not skip_other
+      if skip_other:
+        continue
       if (isprime[i>>1]):
           yield i
           if (i < sN):
