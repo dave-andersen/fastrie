@@ -6,7 +6,8 @@ import array
 import sys
 import invert_mod
 
-T=10**15  # one trillion
+#T=10**15  # one trillion
+# Target from first block in the Riecoin blockchain
 T=0x801A2F60588BF10BB614D6796A726025F88C7156E3FBDF68685FC0617F4266358C0000000000
 print T
 tuple_offsets = [0, 4, 6, 10, 12, 16]
@@ -17,8 +18,8 @@ for p in faster_sieve_e.genprime(Pn):
 
 offset = 97 # Only works up to Pn < 97!
 
-# Step 1:  Round up to the nearest multiple of our primorial (210)
-# Step 2:  Add in the offset (97)
+# Step 1:  Round up to the nearest multiple of our primorial
+# Step 2:  Add in the offset
 
 remainder = int(T % primorial) #  Remainder after division
 round_up_amount = primorial - remainder
@@ -28,7 +29,7 @@ start_candidate += offset
 count = 0
 
 # Step 3:  Generate a sieve relative to the primorial.
-sievesize = 1024*512 # 1 million entry sieve.
+sievesize = 1024*512
 max_sieve_prime = 1000000
 primes = array.array('I')
 sieve_loc = array.array('I')
@@ -42,7 +43,6 @@ for p in faster_sieve_e.genprime(max_sieve_prime):
         candidate_plus = start_candidate + o
         candidate_mod_p = candidate_plus % p
         index = ((p - candidate_mod_p)*inverse)%p
-        #print "For ", p, " plus ", o, " cmp: ", candidate_mod_p
         sieve_loc.append(index)
 
 def notworking():
