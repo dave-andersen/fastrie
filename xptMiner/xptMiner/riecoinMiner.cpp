@@ -285,6 +285,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	mpz_init(z_ft_n);
 
 	static uint32 primeTupleBias[6] = {0,4,6,10,12,16};
+	static uint32 primeTupleOffset[6] = {0, 4, 2, 4, 2, 4};
 	mpz_set(z_temp2, z_primorial);
 
 	uint32_t primeIndex = riecoin_primorialSizeSkip;
@@ -305,18 +306,21 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    n_sparse++;
 	  }
 
+	  /* Compute (rounded_up_target + offset)%p efficiently.  Instead of doing %p
+	   * in the inner loop, just do one test - the primeTupleOffets are all smaller
+	   * than the smallest prime in the sieve, and so can never increase reminder
+	   * too much. */
 	  uint32 remainder = mpz_tdiv_ui(z_temp, p);
 	  for (uint32 f = 0; f < 6; f++) {
-	    uint64_t b_remainder = remainder + primeTupleBias[f];
-	    if (b_remainder > p) {
-	      b_remainder -= p;
+	    remainder += primeTupleOffset[f];
+	    if (remainder > p) {
+	      remainder -= p;
 	    }
-	    int64_t pa = p-b_remainder;
+	    int64_t pa = p-remainder;
 	    uint64_t index = pa*inverted; // (pa%p)*inverted;
 	    index %= p;
 	    offsets[off_offset][f] = index;
 	  }
-	  silly_sort_indexes(offsets[off_offset]);
 	  off_offset++;
 	}
 
@@ -431,11 +435,8 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	       */
 
 	      /* Note start at 1 - we've already tested bias 0 */
-	      int prev_offset = 0;
 	      for (int i = 1; i < 6; i++) {
-		uint32_t add_to_offset = primeTupleBias[i] - prev_offset;
-		prev_offset = primeTupleBias[i];
-		mpz_add_ui(z_temp, z_temp, add_to_offset);
+		mpz_add_ui(z_temp, z_temp, primeTupleOffset[i]);
 		mpz_sub_ui(z_ft_n, z_temp, 1);
 		mpz_powm(z_ft_r, z_ft_b, z_ft_n, z_temp);
 		if (mpz_cmp_ui(z_ft_r, 1) == 0) {
@@ -465,9 +466,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	      mpz_add(z_temp, z_temp, z_remainderPrimorial);
 	      mpz_add(z_temp, z_temp, z_target);
 
-	      //	      mpz_add_ui(z_temp, z_target, (uint64)remainderPrimorial + (uint64)primorial*(uint64)i + (loop*riecoin_sieveSize*(uint64)primorial));
-
-	      mpz_sub(z_temp2, z_temp, z_target);
+	      mpz_sub(z_temp2, z_temp, z_target); // offset = tested - target
 	      // submit share
 	      uint8 nOffset[32];
 	      memset(nOffset, 0x00, 32);
