@@ -224,6 +224,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	}
 	uint8* sieve = riecoin_sieve;
 
+	time_t start_time = time(NULL);
 #if DEBUG
 	auto start = std::chrono::system_clock::now();
 #endif
@@ -335,7 +336,6 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	uint32 countPrimes = 0;
 
 	static const int maxiter = 100; /* XXX */
-	time_t start_time = time(NULL);
 	for (int loop = 0; loop < maxiter; loop++) {
 	    __sync_synchronize(); /* gcc specific - memory barrier for checking height */
 	    if( block->height != monitorCurrentBlockHeight ) {
