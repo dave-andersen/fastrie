@@ -365,9 +365,6 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    
 	    for (unsigned int i = n_dense; i < (n_dense+n_sparse); i++) {
 	      uint32_t p = riecoin_primeTestTable[i+startingPrimeIndex];
-	      if (i < (n_sparse - 16)) {
-		__builtin_prefetch(&offsets[i+16][0]);
-	      }
 	      for (uint32 f = 0; f < 6; f++) {
 		while (offsets[i][f] < riecoin_sieveSize) {
 		  add_to_pending(sieve, pending, pending_pos, offsets[i][f]);
