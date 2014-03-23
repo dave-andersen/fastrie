@@ -1,0 +1,31 @@
+xptMiner changes:
+	
+b13 (not yet released):
+	- Switch target recomputation to every 3 minutes.
+	
+	- Minor code optimizations for initial sieve offset computation,
+	  which now occupies a bit more CPU time than it did before because
+	  of b12 changes to recompute target.
+
+	- Continued internal code cleanup and clarification.
+	
+b12:
+	- Re-generates target and nonce time every 60 seconds.
+	  This may be too aggressive - I'm going to back it out a bit
+	  in b13 and see if people continue to have the invalid share
+	  problem.
+
+b11:
+	- Import reconnect-hang fix from clintar/xptMiner.
+
+b10:
+	- MAJOR CHANGE:  Update to the definition of a "share"
+	  from a 4-chain of primes (first four all prime) to
+	  "any four".  This change results in substantially more
+	  shares per hour, but addresses fairness problems resulting
+	  from targeting 4-chains vs 6-chains.
+
+	  A consequence of this change is that 2ch/3ch/4ch numbers
+	  are all increased and should not be compared vs previous 
+	  versions.  No substantive changes to actual search process,
+	  so blocks per hour should remain the same.
