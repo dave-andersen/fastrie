@@ -205,16 +205,6 @@ inline void silly_sort_indexes(uint32_t indexes[6]) {
   }
 }
 
-inline void silly_sort_indexes4(uint32_t indexes[KILL_UP_TO]) {
-  for (int i = 0; i < kill_up_to-1; i++) {
-    for (int j = i+1; j < kill_up_to; j++) {
-      if (indexes[j] < indexes[i]) {
-	std::swap(indexes[i], indexes[j]);
-      }
-    }
-  }
-}
-
 inline void add_to_pending(uint8_t *sieve, uint32_t pending[16], uint32_t &pos, uint32_t ent) {
   __builtin_prefetch(&(sieve[ent>>3]));
   uint32_t old = pending[pos];
@@ -231,11 +221,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 {
 	uint32 searchBits = block->targetCompact;
 
-	if( riecoin_sieve ) {
-	  //memset(riecoin_sieve, 0x00, riecoin_sieveSize/8);
-	}
-	else
-	{
+	if( !riecoin_sieve ) {
 		riecoin_sieve = (uint8*)malloc(riecoin_sieveSize/8);
 		size_t offsize = sizeof(sixoff) * (riecoin_primeTestSize+1);
 		offsets = (sixoff *)malloc(offsize);
