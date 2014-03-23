@@ -1,6 +1,9 @@
 xptMiner changes:
 	
-b13 (not yet released):
+b13 (2014-03-23)
+	- Calculate instead of guess the maxiter (it was set too high)
+	  based upon the riecoin nonce limit, the primorial, and the
+	  size of the sieve.
 	- Switch target recomputation to every 3 minutes.
 	
 	- Minor code optimizations for initial sieve offset computation,

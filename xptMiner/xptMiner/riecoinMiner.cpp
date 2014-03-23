@@ -10,13 +10,22 @@
 #define ARCH 0
 #define DEBUG 0
 
-static const int NONCE_REGEN_SECONDS = 180;
+static const int NONCE_REGEN_SECONDS = 195;
 static const int core_prime_n = 8; /* 8=23, 9=29 */
 uint32 riecoin_sieveSize = 1024*1024*8; /* 1MB, tuned for L3 of Haswell */
 uint32_t riecoin_primeTestLimit;
 
 uint32 riecoin_primorialSizeSkip = 40; /* 15 is the 64 bit limit */
 static const uint32_t startPrime = riecoin_primorialSizeSkip;
+/* Based on the primorial (40 is 226 bits), we only have about 2^29
+ * increments before overflowing the 256 bit nonce field in Riecoin.
+ * Each loop goes through riecoin_sieveSize increments, which means
+ * that our max loop iter count is 2^29/riecoin_sieveSize.  With
+ * the current settings of 8M for sieveSize, this means 64
+ * iterations.
+ */
+static const uint64_t max_increments = (1<<29);
+static const uint32_t maxiter = (max_increments/riecoin_sieveSize);
 
 //static const uint32_t primorial_offset = 97;
 static const uint32_t primorial_offset = 16057; /* For > 26 or so */
@@ -339,7 +348,6 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	uint32 countCandidates = 0;
 	uint32 countPrimes = 0;
 
-	static const int maxiter = 100; /* XXX */
 	for (int loop = 0; loop < maxiter; loop++) {
 	    __sync_synchronize(); /* gcc specific - memory barrier for checking height */
 	    if( block->height != monitorCurrentBlockHeight ) {
