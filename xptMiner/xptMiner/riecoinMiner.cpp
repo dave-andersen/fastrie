@@ -10,15 +10,10 @@
 #define ARCH 0
 #define DEBUG 0
 
-/* AMD on susitna seems to like:  *2 sieveSize, 14.9m prime test limit */
-
+static const int NONCE_REGEN_SECONDS = 180;
 static const int core_prime_n = 8; /* 8=23, 9=29 */
 uint32 riecoin_sieveSize = 1024*1024*8; /* 1MB, tuned for L3 of Haswell */
-/* 131 works here on haswell */
 uint32_t riecoin_primeTestLimit;
-#define KILL_UP_TO 6
-static const int kill_up_to = KILL_UP_TO;
-static const unsigned int vector_batch4_limit = 1000000;
 
 uint32 riecoin_primorialSizeSkip = 40; /* 15 is the 64 bit limit */
 static const uint32_t startPrime = riecoin_primorialSizeSkip;
@@ -312,9 +307,11 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	  uint32 remainder = mpz_tdiv_ui(z_temp, p);
 	  for (uint32 f = 0; f < 6; f++) {
 	    uint64_t b_remainder = remainder + primeTupleBias[f];
-	    b_remainder %= p;
-	    int64_t pa = (p<b_remainder)?(p-b_remainder+p):(p-b_remainder);
-	    uint64_t index = (pa%p)*inverted;
+	    if (b_remainder > p) {
+	      b_remainder -= p;
+	    }
+	    int64_t pa = p-b_remainder;
+	    uint64_t index = pa*inverted; // (pa%p)*inverted;
 	    index %= p;
 	    offsets[off_offset][f] = index;
 	  }
@@ -345,7 +342,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	      break;
 	    }
 	    time_t cur_time = time(NULL);
-	    if ((cur_time - start_time) > 60) {
+	    if ((cur_time - start_time) > NONCE_REGEN_SECONDS) {
 	      break;
 	    }
 
