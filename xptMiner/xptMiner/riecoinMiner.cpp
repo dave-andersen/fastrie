@@ -338,9 +338,14 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	uint32 countPrimes = 0;
 
 	static const int maxiter = 100; /* XXX */
+	time_t start_time = time(NULL);
 	for (int loop = 0; loop < maxiter; loop++) {
 	    __sync_synchronize(); /* gcc specific - memory barrier for checking height */
 	    if( block->height != monitorCurrentBlockHeight ) {
+	      break;
+	    }
+	    time_t cur_time = time(NULL);
+	    if ((cur_time - start_time) > 60) {
 	      break;
 	    }
 
