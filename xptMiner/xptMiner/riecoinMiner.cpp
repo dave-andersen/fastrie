@@ -3,20 +3,16 @@
 #include "updater.h"
 
 #define zeroesBeforeHashInPrime	8
-#define ARCH_SSE4 0
-#define ARCH_AVX 1
-#define ARCH_AVX2 2
 
-#define ARCH 0
 #define DEBUG 0
 
 static const int NONCE_REGEN_SECONDS = 195;
 static const int core_prime_n = 8; /* 8=23, 9=29 */
-uint32 riecoin_sieveSize = 1024*1024*8; /* 1MB, tuned for L3 of Haswell */
+uint32_t riecoin_sieveSize = 1024*1024*8; /* 1MB, tuned for L3 of Haswell */
 uint32_t riecoin_primeTestLimit;
 
-uint32 riecoin_primorialSizeSkip = 40; /* 15 is the 64 bit limit */
-static const uint32_t startPrime = riecoin_primorialSizeSkip;
+uint32 riecoin_primorialNumber = 40; /* 15 is the 64 bit limit */
+
 /* Based on the primorial (40 is 226 bits), we only have about 2^29
  * increments before overflowing the 256 bit nonce field in Riecoin.
  * Each loop goes through riecoin_sieveSize increments, which means
@@ -30,23 +26,13 @@ static const uint32_t maxiter = (max_increments/riecoin_sieveSize);
 //static const uint32_t primorial_offset = 97;
 static const uint32_t primorial_offset = 16057; /* For > 26 or so */
 
-#if ARCH==ARCH_SSE4
-#define USE_VECTOR 0
-#elif ARCH==ARCH_AVX
-#define USE_VECTOR 1
-#elif ARCH==ARCH_AVX2
-#define USE_VECTOR 1
-#endif
+const uint32 riecoin_denseLimit = 16384; /* A few cachelines */
+uint32_t* riecoin_primeTestTable;
+uint32_t riecoin_primeTestSize;
+int32_t *inverts;
+mpz_t  z_primorial;
 
 unsigned int int_invert_mpz(mpz_t &z_a, uint32_t nPrime);
-
-const uint32 riecoin_denseLimit = 16384; /* A few cachelines */
-uint32* riecoin_primeTestTable;
-uint32 riecoin_primeTestSize;
-int32_t *inverts;
-
-mpz_t  z_primorial;
-uint32_t primes_for_six = 0;  /* # test primes < denseLimit  */
 
 void riecoin_init(uint64_t sieveMax)
 {
@@ -55,7 +41,6 @@ void riecoin_init(uint64_t sieveMax)
 	// generate prime table
 	riecoin_primeTestTable = (uint32*)malloc(sizeof(uint32)*(riecoin_primeTestLimit/4+10));
 	riecoin_primeTestSize = 0;
-	  //int32_t inverted = int_invert_mpz(z_temp2, p);
 
 	// generate prime table using Sieve of Eratosthenes
 	uint8* vfComposite = (uint8*)malloc(sizeof(uint8)*(riecoin_primeTestLimit+7)/8);
@@ -75,16 +60,17 @@ void riecoin_init(uint64_t sieveMax)
 			riecoin_primeTestSize++;
 		}
 	}
-	riecoin_primeTestTable = (uint32*)realloc(riecoin_primeTestTable, sizeof(uint32)*riecoin_primeTestSize);
+	riecoin_primeTestTable = (uint32_t*)realloc(riecoin_primeTestTable, sizeof(uint32)*riecoin_primeTestSize);
 	free(vfComposite);
 #if DEBUG
 	printf("Table with %d entries generated\n", riecoin_primeTestSize);
 #endif
 	// make sure sieve size is divisible by 8
 	riecoin_sieveSize = (riecoin_sieveSize&~7);
-	// generate primorial for 40
+
+	// generate primorial
 	mpz_init_set_ui(z_primorial, riecoin_primeTestTable[0]);
-	for(uint32 i=1; i<riecoin_primorialSizeSkip; i++)
+	for(uint32_t i=1; i<riecoin_primorialNumber; i++)
 	{
 		mpz_mul_ui(z_primorial, z_primorial, riecoin_primeTestTable[i]);
 	}
@@ -92,6 +78,7 @@ void riecoin_init(uint64_t sieveMax)
 	gmp_printf("z_primorial: %Zd\n", z_primorial);
 #endif
 	inverts = (int32_t *)malloc(sizeof(int32_t) * (riecoin_primeTestSize));
+
 	for (uint32_t i = 5; i < riecoin_primeTestSize; i++) {
 	  inverts[i] = int_invert_mpz(z_primorial, riecoin_primeTestTable[i]);
 	}
@@ -100,7 +87,7 @@ void riecoin_init(uint64_t sieveMax)
 
 typedef uint32_t sixoff[6];
 
-thread_local uint8* riecoin_sieve = NULL;
+thread_local uint8_t* riecoin_sieve = NULL;
 thread_local sixoff *offsets = NULL;
 
 
@@ -196,7 +183,6 @@ unsigned int int_invert_mpz(mpz_t &z_a, uint32_t nPrime)
 {
   int32_t rem1 = mpz_tdiv_ui(z_a, nPrime); // rem1 = a % nPrime
   return int_invert_internal(rem1, nPrime);
-  //  return int_invert_internal2(rem1, nPrime);
 }
 
 inline void silly_sort_indexes(uint32_t indexes[6]) {
@@ -297,7 +283,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	static uint32 primeTupleOffset[6] = {0, 4, 2, 4, 2, 4};
 	mpz_set(z_temp2, z_primorial);
 
-	uint32_t primeIndex = riecoin_primorialSizeSkip;
+	uint32_t primeIndex = riecoin_primorialNumber;
 	
 	uint32_t off_offset = 0;
 	uint32_t startingPrimeIndex = primeIndex;
@@ -315,7 +301,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    n_sparse++;
 	  }
 
-	  /* Compute (rounded_up_target + offset)%p efficiently.  Instead of doing %p
+	  /* Compute remainder = (rounded_up_target + offset)%p efficiently.  Instead of %p
 	   * in the inner loop, just do one test - the primeTupleOffets are all smaller
 	   * than the smallest prime in the sieve, and so can never increase reminder
 	   * too much. */
@@ -326,7 +312,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	      remainder -= p;
 	    }
 	    int64_t pa = p-remainder;
-	    uint64_t index = pa*inverted; // (pa%p)*inverted;
+	    uint64_t index = pa*inverted;
 	    index %= p;
 	    offsets[off_offset][f] = index;
 	  }
@@ -336,7 +322,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 #if DEBUG
 	auto end = std::chrono::system_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
-	printf("Initial invert time:  %d ms\n", dur);
+	printf("Loop start offset compute time:  %d ms\n", dur);
 #endif
 
 	/* Main processing loop:
