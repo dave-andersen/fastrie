@@ -1,4 +1,29 @@
 xptMiner changes:
+
+b14 (2014-03-29)
+	- Providing binaries linked against gmp6.  Tested and
+	  validated.  Decent speedup for newer Intel CPUs.
+
+	- Optimization for sieving to large numbers (-s #).
+	  Works properly up to around 2^31-1, but to be safe, use at
+          most 2.1 billion (-s 2100000000).  This optimization uses an
+	  idea from a00k's miner - thank you!  If the offset of
+	  a prime in the sieve is greater than the maximum amount the
+	  sieve can be extended within the Riecoin nonce, it is discarded;
+	  this helps save some space with large sieves and lets the miner
+	  be more efficient when extending.
+
+	- Note that super-large sieve values are not necessarily the
+	  best.  Benchmark and evaluate for your own CPU.  In general,
+	  higher difficulty calls for a larger -s, but doing so
+	  increases the amount of memory used per thread and
+	  increases the think-time at the start of every block.
+	  A slower CPU or a lower-memory CPU wants a smaller -s
+          value.  Some good values to try:
+	     Small CPU:  200000000
+             Default:    500000000
+             Good CPU:   900000000
+             Fast CPU:  1500000000
 	
 b13 (2014-03-23)
 	- Calculate instead of guess the maxiter (it was set too high)

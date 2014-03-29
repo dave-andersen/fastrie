@@ -8,8 +8,10 @@
 
 static const int NONCE_REGEN_SECONDS = 195;
 static const int core_prime_n = 8; /* 8=23, 9=29 */
-uint32_t riecoin_sieveSize = 1024*1024*8; /* 1MB, tuned for L3 of Haswell */
+static const uint32_t riecoin_sieveBits = 23; /* 8 million, or 1MB, tuned for Haswell L3 */
+static const uint32_t riecoin_sieveSize = (1<<riecoin_sieveBits); /* 1MB, tuned for L3 of Haswell */
 uint32_t riecoin_primeTestLimit;
+uint32_t num_entries_per_segment = 0;
 
 uint32 riecoin_primorialNumber = 40; /* 15 is the 64 bit limit */
 
@@ -29,6 +31,7 @@ static const uint32_t primorial_offset = 16057; /* For > 26 or so */
 const uint32 riecoin_denseLimit = 16384; /* A few cachelines */
 uint32_t* riecoin_primeTestTable;
 uint32_t riecoin_primeTestSize;
+uint32_t riecoin_primeTestStoreOffsetsSize;
 int32_t *inverts;
 mpz_t  z_primorial;
 
@@ -65,8 +68,6 @@ void riecoin_init(uint64_t sieveMax)
 #if DEBUG
 	printf("Table with %d entries generated\n", riecoin_primeTestSize);
 #endif
-	// make sure sieve size is divisible by 8
-	riecoin_sieveSize = (riecoin_sieveSize&~7);
 
 	// generate primorial
 	mpz_init_set_ui(z_primorial, riecoin_primeTestTable[0]);
@@ -83,12 +84,28 @@ void riecoin_init(uint64_t sieveMax)
 	  inverts[i] = int_invert_mpz(z_primorial, riecoin_primeTestTable[i]);
 	}
 
+	uint64_t high_segment_entries = 0;
+	double high_floats = 0.0;
+	riecoin_primeTestStoreOffsetsSize = 0;
+	for (uint32_t i = 5; i < riecoin_primeTestSize; i++) {
+	  uint32_t p = riecoin_primeTestTable[i];
+	  if (p < max_increments) {
+	    riecoin_primeTestStoreOffsetsSize++;
+	  } else {
+	    high_floats += ((6.0f * max_increments) / (double)p);
+	  }
+	}
+	high_segment_entries = ceil(high_floats);
+
+	num_entries_per_segment = high_segment_entries/maxiter;
+	num_entries_per_segment = (num_entries_per_segment + (num_entries_per_segment>>3));
 }
 
 typedef uint32_t sixoff[6];
 
 thread_local uint8_t* riecoin_sieve = NULL;
 thread_local sixoff *offsets = NULL;
+thread_local uint32_t *segment_hits[maxiter];
 
 
 uint32 _getHexDigitValue(uint8 c)
@@ -213,9 +230,12 @@ void riecoin_process(minerRiecoinBlock_t* block)
 
 	if( !riecoin_sieve ) {
 		riecoin_sieve = (uint8*)malloc(riecoin_sieveSize/8);
-		size_t offsize = sizeof(sixoff) * (riecoin_primeTestSize+1);
+		size_t offsize = sizeof(sixoff) * (riecoin_primeTestStoreOffsetsSize+1);
 		offsets = (sixoff *)malloc(offsize);
 		memset(offsets, 0, offsize);
+		for (int i = 0; i < maxiter; i++) {
+		  segment_hits[i] = (uint32_t *)malloc(sizeof(uint32_t) * num_entries_per_segment);
+		}
 	}
 	uint8* sieve = riecoin_sieve;
 
@@ -289,16 +309,27 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	uint32_t startingPrimeIndex = primeIndex;
 	uint32_t n_dense = 0;
 	uint32_t n_sparse = 0;
+	uint32_t n_once_only = 0;
+	uint32_t n_once_only_used = 0;
 	mpz_set(z_temp2, z_primorial);
+	uint32_t segment_counts[maxiter];
+	for (int i = 0; i < maxiter; i++) {
+	  segment_counts[i] = 0;
+	}
+
 	//printf("primeIndex: %d  is %d\n", primeIndex, riecoin_primeTestTable[primeIndex]);
 	for( ; primeIndex < riecoin_primeTestSize; primeIndex++)
 	{
 	  uint32 p = riecoin_primeTestTable[primeIndex];
 	  int32_t inverted = inverts[primeIndex];
+	  bool is_once_only = false;
 	  if (p < riecoin_denseLimit) {
 	    n_dense++;
-	  } else {
+	  } else if (p < max_increments) {
 	    n_sparse++;
+	  } else {
+	    n_once_only++;
+	    is_once_only = true;
 	  }
 
 	  /* Compute remainder = (rounded_up_target + offset)%p efficiently.  Instead of %p
@@ -314,12 +345,28 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    int64_t pa = p-remainder;
 	    uint64_t index = pa*inverted;
 	    index %= p;
-	    offsets[off_offset][f] = index;
+	    if (!is_once_only) {
+	      offsets[off_offset][f] = index;
+	    } else {
+	      if (index < max_increments) {
+		uint32_t segment = index>>riecoin_sieveBits;
+		uint32_t sc = segment_counts[segment];
+		if (sc >= num_entries_per_segment) { 
+		  printf("EEEEK segment %u  %u for prime %u with index %u is > %u\n", segment, sc, p, index, num_entries_per_segment); exit(-1);
+		}
+		segment_hits[segment][sc] = index - (riecoin_sieveSize*segment);
+		segment_counts[segment]++;
+		n_once_only_used++;
+	      }
+	    }
 	  }
 	  off_offset++;
 	}
 
 #if DEBUG
+	printf("Sieve set up with %u dense %u sparse and %u/%u once-only\n", n_dense, n_sparse, n_once_only_used, n_once_only);
+	printf("used %d offsets slots\n", off_offset);
+
 	auto end = std::chrono::system_clock::now();
 	auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count();
 	printf("Loop start offset compute time:  %d ms\n", dur);
@@ -328,7 +375,8 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	/* Main processing loop:
 	 * 1)  Sieve "dense" primes;
 	 * 2)  Sieve "sparse" primes;
-	 * 3)  Scan sieve for candidates, test, report
+	 * 3)  Sieve "so sparse they happen at most once" primes;
+	 * 4)  Scan sieve for candidates, test, report
 	 */
 
 	uint32 countCandidates = 0;
@@ -343,6 +391,9 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    if ((cur_time - start_time) > NONCE_REGEN_SECONDS) {
 	      break;
 	    }
+#if DEBUG
+	    printf("Loop %d after %d seconds\n", loop, (cur_time-start_time)); fflush(stdout);
+#endif
 
 	    memset(sieve, 0, riecoin_sieveSize/8);
 
@@ -373,6 +424,12 @@ void riecoin_process(minerRiecoinBlock_t* block)
 		offsets[i][f] -= riecoin_sieveSize;
 	      }
 	    }
+
+#if 1
+	    for (uint32_t i = 0; i < segment_counts[loop]; i++) {
+	      add_to_pending(sieve, pending, pending_pos, segment_hits[loop][i]);
+	    }
+#endif
 
 	    for (int i = 0; i < 16; i++) {
 	      uint32_t old = pending[i];
