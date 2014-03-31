@@ -1,0 +1,21 @@
+Quick and ugly hack to generate the offset-and-difficulty
+plot of Riecoin mining progress.  Warning:  It really is
+a silly and inefficient way of getting the data and
+someone should rewrite it.  It takes quite a while when
+starting from scratch.
+
+The first time you run it, you may have to manually set
+the START variable to zero in the .sh scripts.
+
+To run:
+1)  Update the path to your riecoind in getdiffs.sh and getoffsets.sh
+
+2)  Run:
+  ./getoffsets.sh >> blocks_trimmed
+  ./getdiffs.sh >> diffs.txt
+
+3) Create logscale version of offets
+  ./blocklog.py > block_logs.txt
+
+4) Create plot
+  gnuplot graph.gnuplot
