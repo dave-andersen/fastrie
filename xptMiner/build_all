@@ -1,0 +1,29 @@
+#!/bin/sh
+VERSION=b14
+MAKEFLAGS=-j4
+make clean
+make ${MAKEFLAGS} -f Makefile BUILD_ARCH='-msse4 -mavx -mavx2 -static'
+strip xptminer
+mv -f xptminer xptminer-avx2-${VERSION}
+
+make clean
+make ${MAKEFLAGS} -f Makefile BUILD_ARCH='-msse4 -mavx -static'
+strip xptminer
+mv -f xptminer xptminer-avx-${VERSION}
+
+make clean
+make ${MAKEFLAGS} -f Makefile BUILD_ARCH='-msse4 -static'
+strip xptminer
+mv -f xptminer xptminer-sse4-${VERSION}
+
+#The version of mingw I have doesn't do avx2
+MAKEFILE=Makefile.mingw
+
+make clean
+make ${MAKEFLAGS} -f ${MAKEFILE} BUILD_ARCH='-msse4 -mavx -static'
+mv -f xptminer.exe xptminer-avx-${VERSION}.exe
+
+make clean
+make ${MAKEFLAGS} -f ${MAKEFILE} BUILD_ARCH='-msse4 -static'
+mv -f xptminer.exe xptminer-sse4-${VERSION}.exe
+

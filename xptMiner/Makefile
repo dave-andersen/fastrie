@@ -24,8 +24,10 @@ ifeq ($(OSVERSION),Linux)
 #	ARCHFLAGS = -march=corei7 -mno-avx
 endif
 
-CFLAGS += $(ARCHFLAGS)
-CXXFLAGS += $(ARCHFLAGS)
+BUILD_ARCH ?= $(ARCHFLAGS)
+
+CFLAGS += $(BUILD_ARCH)
+CXXFLAGS += $(BUILD_ARCH)
 
 ifeq ($(OSVERSION),FreeBSD)
 	CXX = clang++

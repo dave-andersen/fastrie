@@ -37,6 +37,10 @@ ifeq ($(OSVERSION),FreeBSD)
 	CXXFLAGS += -DHAVE_DECL_LE32DEC -march=native
 endif
 
+CFLAGS += $(BUILD_ARCH)
+CXXFLAGS += $(BUILD_ARCH)
+
+
 # You might need to edit these paths too
 LIBPATHS =  -L/home/dga/cross/lib
 INCLUDEPATHS = -IxptMiner/includes/ -IxptMiner/OpenCL -I/home/dga/cross/include
