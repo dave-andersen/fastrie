@@ -70,7 +70,6 @@ OBJS = \
 	xptMiner/main.o \
 	xptMiner/sha2.o \
 	xptMiner/xptClient.o \
-	xptMiner/shavite.o \
 	xptMiner/xptClientPacketHandler.o \
 	xptMiner/xptPacketbuffer.o \
 	xptMiner/xptServer.o \
