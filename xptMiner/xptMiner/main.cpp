@@ -17,7 +17,6 @@ volatile uint32 monitorCurrentBlockHeight; // used to notify worker threads of n
 volatile uint32 monitorCurrentBlockTime; // keeps track of current block time, used to detect if current work data is outdated
 
 // stats
-volatile uint32 totalCollisionCount = 0;
 volatile uint32 totalShareCount = 0;
 volatile uint32 totalRejectedShareCount = 0;
 volatile uint32 total2ChainCount = 0;
@@ -277,34 +276,7 @@ void xptMiner_xptQueryWorkLoop()
 			{
 				uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
 				double speedRate = 0.0;
-				if( workDataSource.algorithm == ALGORITHM_PROTOSHARES )
-				{
-					// speed is represented as collisions/min
-					if( passedSeconds > 5 )
-					{
-						speedRate = (double)totalCollisionCount / (double)passedSeconds * 60.0;
-					}
-					printf("[%02d:%02d:%02d] collisions/min: %.4lf Shares total: %d / %d\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, speedRate, totalShareCount, totalShareCount-totalRejectedShareCount);
-				}
-				else if( workDataSource.algorithm == ALGORITHM_SCRYPT )
-				{
-					// speed is represented as khash/s
-					if( passedSeconds > 5 )
-					{
-						speedRate = (double)totalCollisionCount / (double)passedSeconds / 1000.0;
-					}
-					printf("[%02d:%02d:%02d] kHash/s: %.2lf Shares total: %d / %d\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, speedRate, totalShareCount, totalShareCount-totalRejectedShareCount);
-				}
-				else if( workDataSource.algorithm == ALGORITHM_METISCOIN || workDataSource.algorithm == ALGORITHM_MAXCOIN )
-				{
-					// speed is represented as khash/s (in steps of 0x8000)
-					if( passedSeconds > 5 )
-					{
-						speedRate = (double)totalCollisionCount * 32768.0 / (double)passedSeconds / 1000.0;
-					}
-					printf("[%02d:%02d:%02d] kHash/s: %.2lf Shares total: %d / %d\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, speedRate, totalShareCount, totalShareCount-totalRejectedShareCount);
-				}
-				else if( workDataSource.algorithm == ALGORITHM_RIECOIN )
+				if( workDataSource.algorithm == ALGORITHM_RIECOIN )
 				{
 					// speed is represented as knumber/s (in steps of 0x1000)
 					float speedRate_2ch = 0.0f;
@@ -397,7 +369,6 @@ void xptMiner_xptQueryWorkLoop()
 			{
 				LeaveCriticalSection(&cs_xptClient);
 				printf("Connected to server using x.pushthrough(xpt) protocol\n");
-				totalCollisionCount = 0;
 				total2ChainCount = 0;
 				total3ChainCount = 0;
 				total4ChainCount = 0;
@@ -498,26 +469,6 @@ void xptMiner_parseCommandline(int argc, char **argv)
 			}
 			cIdx++;
 		}
-		else if( memcmp(argument, "-m512", 6)==0 )
-		{
-			commandlineInput.ptsMemoryMode = PROTOSHARE_MEM_512;
-		}
-		else if( memcmp(argument, "-m256", 6)==0 )
-		{
-			commandlineInput.ptsMemoryMode = PROTOSHARE_MEM_256;
-		}
-		else if( memcmp(argument, "-m128", 6)==0 )
-		{
-			commandlineInput.ptsMemoryMode = PROTOSHARE_MEM_128;
-		}
-		else if( memcmp(argument, "-m32", 5)==0 )
-		{
-			commandlineInput.ptsMemoryMode = PROTOSHARE_MEM_32;
-		}
-		else if( memcmp(argument, "-m8", 4)==0 )
-		{
-			commandlineInput.ptsMemoryMode = PROTOSHARE_MEM_8;
-		}
 		else if( memcmp(argument, "-gpu", 5)==0 )
 		{
 			commandlineInput.useGPU = true;
@@ -563,7 +514,6 @@ int main(int argc, char** argv)
 	commandlineInput.host = "ypool.net";
 	srand(getTimeMilliseconds());
 	commandlineInput.port = 8080 + (rand()%8); // use random port between 8080 and 8087
-	commandlineInput.ptsMemoryMode = PROTOSHARE_MEM_256;
 	commandlineInput.useGPU = false;
   uint32_t numcpu = 1; // in case we fall through;	
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
@@ -602,20 +552,18 @@ sysctl(mib, 2, &numcpu, &len, NULL, 0);
 	commandlineInput.numThreads = numcpu;
 	commandlineInput.numThreads = std::min(std::max(commandlineInput.numThreads, 1), 4);
 	xptMiner_parseCommandline(argc, argv);
-	minerSettings.protoshareMemoryMode = commandlineInput.ptsMemoryMode;
 	minerSettings.useGPU = commandlineInput.useGPU;
-	printf("\xC9\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBB\n");
-	printf("\xBA  xptMiner/ric/dga (%s)                    \xBA\n", minerVersionString);
-	printf("\xBA  author: jh00 (xptminer) dga (ric core)          \xBA\n");
-	printf("\xBA  http://ypool.net                                \xBA\n");
-	printf("\xC8\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xCD\xBC\n");
+	printf("----------------------------\n");
+	printf("  xptMiner/ric/dga (%s)\n", minerVersionString);
+	printf("  author: jh00 (xptminer) dga (ric core)\n");
+	printf("  http://ypool.net\n");
+	printf("----------------------------\n");
 	printf("Launching miner...\n");
-	uint32 mbTable[] = {512,256,128,32,8};
-	//printf("Using %d megabytes of memory per thread\n", mbTable[min(commandlineInput.ptsMemoryMode,(sizeof(mbTable)/sizeof(mbTable[0])))]);
 	printf("Using %d CPU threads\n", commandlineInput.numThreads);
-	if( commandlineInput.useGPU )
+
+	if( commandlineInput.useGPU ) {
 		printf("Using GPU if possible\n");
-	printf("Using %d threads\n", commandlineInput.numThreads);
+	}
 	
 	printf("\nFee Percentage:  %.2f%%. To set, use \"-d\" flag e.g. \"-d 2.5\" is 2.5%% donation\n\n", commandlineInput.donationPercent);
 #ifdef _WIN32

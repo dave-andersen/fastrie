@@ -107,7 +107,6 @@ typedef struct
 typedef struct  
 {
 	generalRequestTarget_t requestTarget;
-	uint32 protoshareMemoryMode;
 	// GPU
 	bool useGPU; // enable OpenCL
 	// GPU (MaxCoin specific)
@@ -116,12 +115,6 @@ typedef struct
 }minerSettings_t;
 
 extern minerSettings_t minerSettings;
-
-#define PROTOSHARE_MEM_512		(0)
-#define PROTOSHARE_MEM_256		(1)
-#define PROTOSHARE_MEM_128		(2)
-#define PROTOSHARE_MEM_32		(3)
-#define PROTOSHARE_MEM_8		(4)
 
 // block data struct
 
