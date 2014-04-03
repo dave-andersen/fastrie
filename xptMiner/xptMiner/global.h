@@ -100,9 +100,6 @@ typedef struct
 #include"xptClient.h"
 
 #include"sha2.h"
-#include"sph_keccak.h"
-#include"sph_metis.h"
-#include"sph_shavite.h"
 
 #include"transaction.h"
 
@@ -128,94 +125,6 @@ extern minerSettings_t minerSettings;
 
 // block data struct
 
-typedef struct  
-{
-	// block header data (relevant for midhash)
-	uint32	version;
-	uint8	prevBlockHash[32];
-	uint8	merkleRoot[32];
-	uint32	nTime;
-	uint32	nBits;
-	uint32	nonce;
-	// birthday collision
-	uint32	birthdayA;
-	uint32	birthdayB;
-	uint32	uniqueMerkleSeed;
-
-	uint32	height;
-	uint8	merkleRootOriginal[32]; // used to identify work
-	uint8	target[32];
-	uint8	targetShare[32];
-}minerProtosharesBlock_t;
-
-typedef struct  
-{
-	// block header data
-	uint32	version;
-	uint8	prevBlockHash[32];
-	uint8	merkleRoot[32];
-	uint32	nTime;
-	uint32	nBits;
-	uint32	nonce;
-	uint32	uniqueMerkleSeed;
-	uint32	height;
-	uint8	merkleRootOriginal[32]; // used to identify work
-	uint8	target[32];
-	uint8	targetShare[32];
-}minerScryptBlock_t;
-
-typedef struct  
-{
-	// block header data
-	uint32	version;
-	uint8	prevBlockHash[32];
-	uint8	merkleRoot[32];
-	uint32	nTime;
-	uint32	nBits;
-	uint32	nonce;
-	uint32	uniqueMerkleSeed;
-	uint32	height;
-	uint8	merkleRootOriginal[32]; // used to identify work
-	uint8	target[32];
-	uint8	targetShare[32];
-	// found chain data
-	// todo
-}minerPrimecoinBlock_t;
-
-typedef struct  
-{
-	// block data (order and memory layout is important)
-	uint32	version;
-	uint8	prevBlockHash[32];
-	uint8	merkleRoot[32];
-	uint32	nTime;
-	uint32	nBits;
-	uint32	nonce;
-	// remaining data
-	uint32	uniqueMerkleSeed;
-	uint32	height;
-	uint8	merkleRootOriginal[32]; // used to identify work
-	uint8	target[32];
-	uint8	targetShare[32];
-}minerMetiscoinBlock_t; // identical to scryptBlock
-
-typedef struct  
-{
-	// block data (order and memory layout is important)
-	uint32	version;
-	uint8	prevBlockHash[32];
-	uint8	merkleRoot[32];
-	uint32	nTime;
-	uint32	nBits;
-	uint32	nonce;
-	// remaining data
-	uint32	uniqueMerkleSeed;
-	uint32	height;
-	uint8	merkleRootOriginal[32]; // used to identify work
-	uint8	target[32];
-	uint8	targetShare[32];
-}minerMaxcoinBlock_t; // identical to scryptBlock
-
 
 typedef struct  
 {
@@ -237,15 +146,9 @@ typedef struct
 	uint32  shareTargetCompact;
 }minerRiecoinBlock_t;
 
-#include"scrypt.h"
 #include"algorithm.h"
 
 
-void xptMiner_submitShare(minerProtosharesBlock_t* block);
-void xptMiner_submitShare(minerScryptBlock_t* block);
-void xptMiner_submitShare(minerPrimecoinBlock_t* block);
-void xptMiner_submitShare(minerMetiscoinBlock_t* block);
-void xptMiner_submitShare(minerMaxcoinBlock_t* block);
 void xptMiner_submitShare(minerRiecoinBlock_t* block, uint8* nOffset);
 
 // stats

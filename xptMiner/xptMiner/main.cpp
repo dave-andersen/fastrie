@@ -72,177 +72,6 @@ struct
 uint32_t uniqueMerkleSeedGenerator;
 uint32 miningStartTime = 0;
 
-/*
- * Submit Protoshares share
- */
-void xptMiner_submitShare(minerProtosharesBlock_t* block)
-{
-	uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
-	printf("[%02d:%02d:%02d] Share found! (Blockheight: %d)\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, block->height);
-	EnterCriticalSection(&cs_xptClient);
-	if( xptClient == NULL || xptClient_isDisconnected(xptClient, NULL) == true )
-	{
-		printf("Share submission failed - No connection to server\n");
-		LeaveCriticalSection(&cs_xptClient);
-		return;
-	}
-	// submit block
-	xptShareToSubmit_t* xptShare = (xptShareToSubmit_t*)malloc(sizeof(xptShareToSubmit_t));
-	memset(xptShare, 0x00, sizeof(xptShareToSubmit_t));
-	xptShare->algorithm = ALGORITHM_PROTOSHARES;
-	xptShare->version = block->version;
-	xptShare->nTime = block->nTime;
-	xptShare->nonce = block->nonce;
-	xptShare->nBits = block->nBits;
-	xptShare->nBirthdayA = block->birthdayA;
-	xptShare->nBirthdayB = block->birthdayB;
-	memcpy(xptShare->prevBlockHash, block->prevBlockHash, 32);
-	memcpy(xptShare->merkleRoot, block->merkleRoot, 32);
-	memcpy(xptShare->merkleRootOriginal, block->merkleRootOriginal, 32);
-	//userExtraNonceLength = min(userExtraNonceLength, 16);
-	sint32 userExtraNonceLength = sizeof(uint32);
-	uint8* userExtraNonceData = (uint8*)&block->uniqueMerkleSeed;
-	xptShare->userExtraNonceLength = userExtraNonceLength;
-	memcpy(xptShare->userExtraNonceData, userExtraNonceData, userExtraNonceLength);
-	xptClient_foundShare(xptClient, xptShare);
-	LeaveCriticalSection(&cs_xptClient);
-}
-
-/*
- * Submit Scrypt share
- */
-void xptMiner_submitShare(minerScryptBlock_t* block)
-{
-	uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
-	printf("[%02d:%02d:%02d] Share found! (Blockheight: %d)\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, block->height);
-	EnterCriticalSection(&cs_xptClient);
-	if( xptClient == NULL || xptClient_isDisconnected(xptClient, NULL) == true )
-	{
-		printf("Share submission failed - No connection to server\n");
-		LeaveCriticalSection(&cs_xptClient);
-		return;
-	}
-	// submit block
-	xptShareToSubmit_t* xptShare = (xptShareToSubmit_t*)malloc(sizeof(xptShareToSubmit_t));
-	memset(xptShare, 0x00, sizeof(xptShareToSubmit_t));
-	xptShare->algorithm = ALGORITHM_SCRYPT;
-	xptShare->version = block->version;
-	xptShare->nTime = block->nTime;
-	xptShare->nonce = block->nonce;
-	xptShare->nBits = block->nBits;
-	memcpy(xptShare->prevBlockHash, block->prevBlockHash, 32);
-	memcpy(xptShare->merkleRoot, block->merkleRoot, 32);
-	memcpy(xptShare->merkleRootOriginal, block->merkleRootOriginal, 32);
-	//userExtraNonceLength = min(userExtraNonceLength, 16);
-	sint32 userExtraNonceLength = sizeof(uint32);
-	uint8* userExtraNonceData = (uint8*)&block->uniqueMerkleSeed;
-	xptShare->userExtraNonceLength = userExtraNonceLength;
-	memcpy(xptShare->userExtraNonceData, userExtraNonceData, userExtraNonceLength);
-	xptClient_foundShare(xptClient, xptShare);
-	LeaveCriticalSection(&cs_xptClient);
-}
-
-/*
- * Submit Primecoin share
- */
-void xptMiner_submitShare(minerPrimecoinBlock_t* block)
-{
-	uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
-	printf("[%02d:%02d:%02d] Share found! (Blockheight: %d)\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, block->height);
-	EnterCriticalSection(&cs_xptClient);
-	if( xptClient == NULL || xptClient_isDisconnected(xptClient, NULL) == true )
-	{
-		printf("Share submission failed - No connection to server\n");
-		LeaveCriticalSection(&cs_xptClient);
-		return;
-	}
-	// submit block
-	xptShareToSubmit_t* xptShare = (xptShareToSubmit_t*)malloc(sizeof(xptShareToSubmit_t));
-	memset(xptShare, 0x00, sizeof(xptShareToSubmit_t));
-	xptShare->algorithm = ALGORITHM_PRIME;
-	xptShare->version = block->version;
-	xptShare->nTime = block->nTime;
-	xptShare->nonce = block->nonce;
-	xptShare->nBits = block->nBits;
-	memcpy(xptShare->prevBlockHash, block->prevBlockHash, 32);
-	memcpy(xptShare->merkleRoot, block->merkleRoot, 32);
-	memcpy(xptShare->merkleRootOriginal, block->merkleRootOriginal, 32);
-	//userExtraNonceLength = min(userExtraNonceLength, 16);
-	sint32 userExtraNonceLength = sizeof(uint32);
-	uint8* userExtraNonceData = (uint8*)&block->uniqueMerkleSeed;
-	xptShare->userExtraNonceLength = userExtraNonceLength;
-	memcpy(xptShare->userExtraNonceData, userExtraNonceData, userExtraNonceLength);
-	__debugbreak(); // xpm submission still todo
-	xptClient_foundShare(xptClient, xptShare);
-	LeaveCriticalSection(&cs_xptClient);
-}
-
-/*
- * Submit Metiscoin share
- */
-void xptMiner_submitShare(minerMetiscoinBlock_t* block)
-{
-	uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
-	printf("[%02d:%02d:%02d] Share found! (Blockheight: %d)\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, block->height);
-	EnterCriticalSection(&cs_xptClient);
-	if( xptClient == NULL || xptClient_isDisconnected(xptClient, NULL) == true )
-	{
-		printf("Share submission failed - No connection to server\n");
-		LeaveCriticalSection(&cs_xptClient);
-		return;
-	}
-	// submit block
-	xptShareToSubmit_t* xptShare = (xptShareToSubmit_t*)malloc(sizeof(xptShareToSubmit_t));
-	memset(xptShare, 0x00, sizeof(xptShareToSubmit_t));
-	xptShare->algorithm = ALGORITHM_METISCOIN;
-	xptShare->version = block->version;
-	xptShare->nTime = block->nTime;
-	xptShare->nonce = block->nonce;
-	xptShare->nBits = block->nBits;
-	memcpy(xptShare->prevBlockHash, block->prevBlockHash, 32);
-	memcpy(xptShare->merkleRoot, block->merkleRoot, 32);
-	memcpy(xptShare->merkleRootOriginal, block->merkleRootOriginal, 32);
-	sint32 userExtraNonceLength = sizeof(uint32);
-	uint8* userExtraNonceData = (uint8*)&block->uniqueMerkleSeed;
-	xptShare->userExtraNonceLength = userExtraNonceLength;
-	memcpy(xptShare->userExtraNonceData, userExtraNonceData, userExtraNonceLength);
-	xptClient_foundShare(xptClient, xptShare);
-	LeaveCriticalSection(&cs_xptClient);
-}
-
-
-/*
- * Submit Maxcoin share
- */
-void xptMiner_submitShare(minerMaxcoinBlock_t* block)
-{
-	uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
-	printf("[%02d:%02d:%02d] Share found! (Blockheight: %d)\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, block->height);
-	EnterCriticalSection(&cs_xptClient);
-	if( xptClient == NULL || xptClient_isDisconnected(xptClient, NULL) == true )
-	{
-		printf("Share submission failed - No connection to server\n");
-		LeaveCriticalSection(&cs_xptClient);
-		return;
-	}
-	// submit block
-	xptShareToSubmit_t* xptShare = (xptShareToSubmit_t*)malloc(sizeof(xptShareToSubmit_t));
-	memset(xptShare, 0x00, sizeof(xptShareToSubmit_t));
-	xptShare->algorithm = ALGORITHM_MAXCOIN;
-	xptShare->version = block->version;
-	xptShare->nTime = block->nTime;
-	xptShare->nonce = block->nonce;
-	xptShare->nBits = block->nBits;
-	memcpy(xptShare->prevBlockHash, block->prevBlockHash, 32);
-	memcpy(xptShare->merkleRoot, block->merkleRoot, 32);
-	memcpy(xptShare->merkleRootOriginal, block->merkleRootOriginal, 32);
-	sint32 userExtraNonceLength = sizeof(uint32);
-	uint8* userExtraNonceData = (uint8*)&block->uniqueMerkleSeed;
-	xptShare->userExtraNonceLength = userExtraNonceLength;
-	memcpy(xptShare->userExtraNonceData, userExtraNonceData, userExtraNonceLength);
-	xptClient_foundShare(xptClient, xptShare);
-	LeaveCriticalSection(&cs_xptClient);
-}
 
 /*
  * Submit Riecoin share
@@ -290,11 +119,6 @@ void *xptMiner_minerThread(void *arg)
 	// local work data
 	union
 	{
-		minerProtosharesBlock_t minerProtosharesBlock;
-		minerScryptBlock_t minerScryptBlock;
-		minerMetiscoinBlock_t minerMetiscoinBlock;
-		minerPrimecoinBlock_t minerPrimecoinBlock; 
-		minerMaxcoinBlock_t minerMaxcoinBlock; 
 		minerRiecoinBlock_t minerRiecoinBlock; 
 	};
 	while( true )
@@ -306,91 +130,6 @@ void *xptMiner_minerThread(void *arg)
 		{
 			switch( workDataSource.algorithm )
 			{
-			case ALGORITHM_PROTOSHARES:
-				// get protoshares work data
-				memset(&minerProtosharesBlock, 0x00, sizeof(minerProtosharesBlock));
-				minerProtosharesBlock.version = workDataSource.version;
-				minerProtosharesBlock.nTime = (uint32)time(NULL) + workDataSource.timeBias;
-				minerProtosharesBlock.nBits = workDataSource.nBits;
-				minerProtosharesBlock.nonce = 0;
-				minerProtosharesBlock.height = workDataSource.height;
-				memcpy(minerProtosharesBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
-				memcpy(minerProtosharesBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
-				memcpy(minerProtosharesBlock.targetShare, workDataSource.targetShare, 32);
-				minerProtosharesBlock.uniqueMerkleSeed = uniqueMerkleSeedGenerator++;
-				// generate merkle root transaction
-				bitclient_generateTxHash(sizeof(uint32), (uint8*)&minerProtosharesBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
-				bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerProtosharesBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
-				hasValidWork = true;
-				break;
-			case ALGORITHM_SCRYPT:
-				// get scrypt work data
-				memset(&minerScryptBlock, 0x00, sizeof(minerScryptBlock));
-				minerScryptBlock.version = workDataSource.version;
-				minerScryptBlock.nTime = (uint32)time(NULL) + workDataSource.timeBias;
-				minerScryptBlock.nBits = workDataSource.nBits;
-				minerScryptBlock.nonce = 0;
-				minerScryptBlock.height = workDataSource.height;
-				memcpy(minerScryptBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
-				memcpy(minerScryptBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
-				memcpy(minerScryptBlock.targetShare, workDataSource.targetShare, 32);
-				minerScryptBlock.uniqueMerkleSeed = uniqueMerkleSeedGenerator++;
-				// generate merkle root transaction
-				bitclient_generateTxHash(sizeof(uint32), (uint8*)&minerScryptBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
-				bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerScryptBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
-				hasValidWork = true;
-				break;
-			case ALGORITHM_METISCOIN:
-				// get metiscoin work data
-				memset(&minerMetiscoinBlock, 0x00, sizeof(minerMetiscoinBlock));
-				minerMetiscoinBlock.version = workDataSource.version;
-				minerMetiscoinBlock.nTime = (uint32)time(NULL) + workDataSource.timeBias;
-				minerMetiscoinBlock.nBits = workDataSource.nBits;
-				minerMetiscoinBlock.nonce = 0;
-				minerMetiscoinBlock.height = workDataSource.height;
-				memcpy(minerMetiscoinBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
-				memcpy(minerMetiscoinBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
-				memcpy(minerMetiscoinBlock.targetShare, workDataSource.targetShare, 32);
-				minerMetiscoinBlock.uniqueMerkleSeed = uniqueMerkleSeedGenerator++;
-				// generate merkle root transaction
-				bitclient_generateTxHash(sizeof(uint32), (uint8*)&minerMetiscoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
-				bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerMetiscoinBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
-				hasValidWork = true;
-				break;
-			case ALGORITHM_MAXCOIN:
-				// get maxcoin work data
-				memset(&minerMaxcoinBlock, 0x00, sizeof(minerMaxcoinBlock));
-				minerMaxcoinBlock.version = workDataSource.version;
-				minerMaxcoinBlock.nTime = (uint32)time(NULL) + workDataSource.timeBias;
-				minerMaxcoinBlock.nBits = workDataSource.nBits;
-				minerMaxcoinBlock.nonce = 0;
-				minerMaxcoinBlock.height = workDataSource.height;
-				memcpy(minerMaxcoinBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
-				memcpy(minerMaxcoinBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
-				memcpy(minerMaxcoinBlock.targetShare, workDataSource.targetShare, 32);
-				minerMaxcoinBlock.uniqueMerkleSeed = uniqueMerkleSeedGenerator++;
-				// generate merkle root transaction
-				bitclient_generateTxHash(sizeof(uint32), (uint8*)&minerMaxcoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_SINGLE_SHA256);
-				bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerMaxcoinBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
-				hasValidWork = true;
-				break;
-			case ALGORITHM_PRIME:
-				// get primecoin work data
-				memset(&minerPrimecoinBlock, 0x00, sizeof(minerPrimecoinBlock));
-				minerPrimecoinBlock.version = workDataSource.version;
-				minerPrimecoinBlock.nTime = (uint32)time(NULL) + workDataSource.timeBias;
-				minerPrimecoinBlock.nBits = workDataSource.nBits;
-				minerPrimecoinBlock.nonce = 0;
-				minerPrimecoinBlock.height = workDataSource.height;
-				memcpy(minerPrimecoinBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
-				memcpy(minerPrimecoinBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
-				memcpy(minerPrimecoinBlock.targetShare, workDataSource.targetShare, 32);
-				minerPrimecoinBlock.uniqueMerkleSeed = uniqueMerkleSeedGenerator++;
-				// generate merkle root transaction
-				bitclient_generateTxHash(sizeof(uint32), (uint8*)&minerPrimecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
-				bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerPrimecoinBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
-				hasValidWork = true;
-				break;
 			case ALGORITHM_RIECOIN:
 				// get maxcoin work data
 				memset(&minerRiecoinBlock, 0x00, sizeof(minerRiecoinBlock));
@@ -418,55 +157,8 @@ void *xptMiner_minerThread(void *arg)
 			continue;
 		}
 		// valid work data present, start processing workload
-		if(	workDataSource.algorithm == ALGORITHM_PROTOSHARES )
-		{
-			switch( minerSettings.protoshareMemoryMode )
-			{
-			case PROTOSHARE_MEM_512:
-				protoshares_process_512(&minerProtosharesBlock);
-				break;
-			case PROTOSHARE_MEM_256:
-				protoshares_process_256(&minerProtosharesBlock);
-				break;
-			case PROTOSHARE_MEM_128:
-				protoshares_process_128(&minerProtosharesBlock);
-				break;
-			case PROTOSHARE_MEM_32:
-				protoshares_process_32(&minerProtosharesBlock);
-				break;
-			case PROTOSHARE_MEM_8:
-				protoshares_process_8(&minerProtosharesBlock);
-				break;
-			default:
-				printf("Unknown memory mode\n");
-				Sleep(5000);
-				break;
-			}
-		}
-		else if( workDataSource.algorithm == ALGORITHM_SCRYPT )
-		{
-			scrypt_process_cpu(&minerScryptBlock);
-		}
-		else if( workDataSource.algorithm == ALGORITHM_PRIME )
-		{
-			primecoin_process(&minerPrimecoinBlock);
-		}
-		else if( workDataSource.algorithm == ALGORITHM_METISCOIN )
-		{
-			metiscoin_process(&minerMetiscoinBlock);
-		}
-		else if( workDataSource.algorithm == ALGORITHM_MAXCOIN )
-		{
-#ifdef USE_OPENCL
-			if( minerSettings.useGPU && threadIndex == 0 )
-			{
-				maxcoin_processGPU(&minerMaxcoinBlock);
-			}
-			else
-#endif
-				maxcoin_process(&minerMaxcoinBlock);
-		}
-		else if( workDataSource.algorithm == ALGORITHM_RIECOIN )
+
+		if( workDataSource.algorithm == ALGORITHM_RIECOIN )
 		{
 #define DEBUG_TIMING 0
 #if DEBUG_TIMING
@@ -502,17 +194,7 @@ void xptMiner_getWorkFromXPTConnection(xptClient_t* xptClient)
 	EnterCriticalSection(&workDataSource.cs_work);
 	if( xptClient->algorithm >= 0 && xptClient->algorithm < 32 && xptClient->blockWorkInfo.height > 0 )
 	{
-		if( xptClient->algorithm == ALGORITHM_METISCOIN && algorithmInited[xptClient->algorithm] == 0 )
-		{
-			metiscoin_init();
-			algorithmInited[xptClient->algorithm] = 1;
-		}
-		else if( xptClient->algorithm == ALGORITHM_MAXCOIN && algorithmInited[xptClient->algorithm] == 0 )
-		{
-			maxcoin_init();
-			algorithmInited[xptClient->algorithm] = 1;
-		}
-		else if( xptClient->algorithm == ALGORITHM_RIECOIN && algorithmInited[xptClient->algorithm] == 0 )
+		if( xptClient->algorithm == ALGORITHM_RIECOIN && algorithmInited[xptClient->algorithm] == 0 )
 		{
 		  riecoin_init(commandlineInput.sieveMax);
 			algorithmInited[xptClient->algorithm] = 1;
@@ -664,7 +346,7 @@ void xptMiner_xptQueryWorkLoop()
 			else
 			{
 				// is known algorithm?
-				if( xptClient->clientState == XPT_CLIENT_STATE_LOGGED_IN && (xptClient->algorithm != ALGORITHM_PROTOSHARES && xptClient->algorithm != ALGORITHM_SCRYPT && xptClient->algorithm != ALGORITHM_METISCOIN && xptClient->algorithm != ALGORITHM_MAXCOIN && xptClient->algorithm != ALGORITHM_RIECOIN) )
+				if( xptClient->clientState == XPT_CLIENT_STATE_LOGGED_IN && (xptClient->algorithm != ALGORITHM_RIECOIN) )
 				{
 					printf("The login is configured for an unsupported algorithm.\n");
 					printf("Make sure you miner login details are correct\n");

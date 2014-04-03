@@ -59,29 +59,21 @@ OBJS = \
 	xptMiner/main.o \
 	xptMiner/sha2.o \
 	xptMiner/xptClient.o \
-	xptMiner/protosharesMiner.o \
-	xptMiner/primecoinMiner.o \
-	xptMiner/keccak.o \
-	xptMiner/metis.o \
 	xptMiner/shavite.o \
-	xptMiner/scrypt.o \
-	xptMiner/scryptMinerCPU.o \
 	xptMiner/xptClientPacketHandler.o \
 	xptMiner/xptPacketbuffer.o \
 	xptMiner/xptServer.o \
 	xptMiner/xptServerPacketHandler.o \
 	xptMiner/transaction.o \
-	xptMiner/riecoinMiner.o \
-	xptMiner/metiscoinMiner.o 
+	xptMiner/riecoinMiner.o
+
 
 ifeq ($(ENABLE_OPENCL),1)
 	OBJS += xptMiner/OpenCLObjects.o 
         OBJS += xptMiner/openCL.o
-	OBJS += xptMiner/maxcoinMinerCL.o 
 	CXXFLAGS += -DUSE_OPENCL
 	LIBS += -lOpenCL
 else
-	OBJS += xptMiner/maxcoinMiner.o 
 
 endif
 

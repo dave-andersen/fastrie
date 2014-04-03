@@ -296,15 +296,6 @@ void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, char* walletAddress,
 	}
 	// validate checksum
 	uint8 addressHash[32];
-	if( isMaxCoinAddress )
-	{
-		// MaxCoin uses Keccak for wallet address checksum
-		sph_keccak256_context keccak256_ctx;
-		sph_keccak256_init(&keccak256_ctx);
-		sph_keccak256(&keccak256_ctx, walletAddressRaw, walletAddressRawLength-4);
-		sph_keccak256_close(&keccak256_ctx, addressHash);
-	}
-	else
 	{
 		sha256_ctx s256c;
 		sha256_init(&s256c);
@@ -415,38 +406,7 @@ void xptClient_sendShare(xptClient_t* xptClient, xptShareToSubmit_t* xptShareToS
 	xptPacketbuffer_writeU32(xptClient->sendBuffer, &sendError, xptShareToSubmit->nonce);				// nNonce
 	xptPacketbuffer_writeU32(xptClient->sendBuffer, &sendError, xptShareToSubmit->nBits);				// nBits
 	// algorithm specific
-	if( xptShareToSubmit->algorithm == ALGORITHM_PRIME )
-	{
-		xptPacketbuffer_writeU32(xptClient->sendBuffer, &sendError, xptShareToSubmit->sieveSize);			// sieveSize
-		xptPacketbuffer_writeU32(xptClient->sendBuffer, &sendError, xptShareToSubmit->sieveCandidate);		// sieveCandidate
-		// bnFixedMultiplier
-		xptPacketbuffer_writeU8(xptClient->sendBuffer, &sendError, xptShareToSubmit->fixedMultiplierSize);
-		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->fixedMultiplier, xptShareToSubmit->fixedMultiplierSize, &sendError);
-		// bnChainMultiplier
-		xptPacketbuffer_writeU8(xptClient->sendBuffer, &sendError, xptShareToSubmit->chainMultiplierSize);
-		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->chainMultiplier, xptShareToSubmit->chainMultiplierSize, &sendError);
-	}
-	else if( xptShareToSubmit->algorithm == ALGORITHM_SHA256 || xptShareToSubmit->algorithm == ALGORITHM_SCRYPT || xptShareToSubmit->algorithm == ALGORITHM_METISCOIN || xptShareToSubmit->algorithm == ALGORITHM_MAXCOIN )
-	{
-		// original merkleroot (used to identify work)
-		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->merkleRootOriginal, 32, &sendError);
-		// user extra nonce (up to 16 bytes)
-		xptPacketbuffer_writeU8(xptClient->sendBuffer, &sendError, xptShareToSubmit->userExtraNonceLength);
-		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->userExtraNonceData, xptShareToSubmit->userExtraNonceLength, &sendError);
-	}
-	else if( xptShareToSubmit->algorithm == ALGORITHM_PROTOSHARES )
-	{
-		// nBirthdayA
-		xptPacketbuffer_writeU32(xptClient->sendBuffer, &sendError, xptShareToSubmit->nBirthdayA);
-		// nBirthdayB
-		xptPacketbuffer_writeU32(xptClient->sendBuffer, &sendError, xptShareToSubmit->nBirthdayB);
-		// original merkleroot (used to identify work)
-		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->merkleRootOriginal, 32, &sendError);
-		// user extra nonce (up to 16 bytes)
-		xptPacketbuffer_writeU8(xptClient->sendBuffer, &sendError, xptShareToSubmit->userExtraNonceLength);
-		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->userExtraNonceData, xptShareToSubmit->userExtraNonceLength, &sendError);
-	}
-	else if( xptShareToSubmit->algorithm == ALGORITHM_RIECOIN )
+	if( xptShareToSubmit->algorithm == ALGORITHM_RIECOIN )
 	{
 		// nOffset
 		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->riecoin_nOffset, 32, &sendError);
@@ -455,6 +415,9 @@ void xptClient_sendShare(xptClient_t* xptClient, xptShareToSubmit_t* xptShareToS
 		// user extra nonce (up to 16 bytes)
 		xptPacketbuffer_writeU8(xptClient->sendBuffer, &sendError, xptShareToSubmit->userExtraNonceLength);
 		xptPacketbuffer_writeData(xptClient->sendBuffer, xptShareToSubmit->userExtraNonceData, xptShareToSubmit->userExtraNonceLength, &sendError);
+	} else {
+	  fprintf(stderr, "Eek:  Unknown algorithm %d!\n", xptShareToSubmit->algorithm);
+	  return;
 	}
 	// share id (server sends this back in shareAck, so we can identify share response)
 	xptPacketbuffer_writeU32(xptClient->sendBuffer, &sendError, 0);

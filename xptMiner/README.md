@@ -1,10 +1,9 @@
 xptMiner
 ========
 
-This is a Riecoin (RIC)-focused release built upon xptMiner.  No
-components of it outside of Riecoin mining are maintained.
-
-xptMiner itself is a multi-algorithm miner and reference implementation of the xpt protocol.
+This is a Riecoin (RIC)-focused release built upon xptMiner.  It
+contains only a Riecoin miner - for the reference implementation
+of xptMiner, please see https://github.com/jh000/xptMiner
 
 This build supports Linux and Windows, the latter via the Makefile.mingw.
 
@@ -50,4 +49,4 @@ make clean
 LD_LIBRARY_PATH=/usr/local/lib make -j4 -f Makefile.nomarch
 
 
-This has a 0% donation which can be set using the -d option (-d 2.5 would be 2.5% donation)
+This has a default 2% donation that can be set using the -d option (-d 2.5 would be 2.5% donation)
