@@ -116,10 +116,9 @@ void *xptMiner_minerThread(void *arg)
 #endif
 
 	// local work data
-	union
-	{
-		minerRiecoinBlock_t minerRiecoinBlock; 
-	};
+
+	minerRiecoinBlock_t minerRiecoinBlock; 
+
 	while( true )
 	{
 		// has work?
@@ -137,7 +136,7 @@ void *xptMiner_minerThread(void *arg)
 				minerRiecoinBlock.nBits = workDataSource.nBits;
 				minerRiecoinBlock.targetCompact = workDataSource.targetCompact;
 				minerRiecoinBlock.shareTargetCompact = workDataSource.shareTargetCompact;
-				//minerRiecoinBlock.nonce = 0; // nonce was replaced by nOffset byte[32]
+
 				minerRiecoinBlock.height = workDataSource.height;
 				memcpy(minerRiecoinBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
 				memcpy(minerRiecoinBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
@@ -395,6 +394,7 @@ void xptMiner_parseCommandline(int argc, char **argv)
 	sint32 cIdx = 1;
 	commandlineInput.donationPercent = 2.0f;
 	commandlineInput.sieveMax = 500000000;
+
 	while( cIdx < argc )
 	{
 		char* argument = argv[cIdx];

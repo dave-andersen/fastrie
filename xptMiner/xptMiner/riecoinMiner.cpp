@@ -7,7 +7,6 @@
 #define DEBUG 0
 
 static const int NONCE_REGEN_SECONDS = 195;
-static const int core_prime_n = 8; /* 8=23, 9=29 */
 static const uint32_t riecoin_sieveBits = 23; /* 8 million, or 1MB, tuned for Haswell L3 */
 static const uint32_t riecoin_sieveSize = (1<<riecoin_sieveBits); /* 1MB, tuned for L3 of Haswell */
 uint32_t riecoin_primeTestLimit;
