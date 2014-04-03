@@ -246,11 +246,6 @@ xptClient_t* xptMiner_initateNewXptConnectionObject()
 	xptClient_t* xptClient = xptClient_create();
 	if( xptClient == NULL )
 		return NULL;
-	// set developer fees
-	// up to 8 fee entries can be set
-	// the fee base is always calculated from 100% of the share value
-	// for example if you setup two fee entries with 3% and 2%, the total subtracted share value will be 5%
-	//xptClient_addDeveloperFeeEntry(xptClient, "Ptbi961RSBxRqNqWt4khoNDzZQExaVn7zL", getFeeFromDouble(0.5)); // 0.5% fee (jh00, for testing)
 
 	return xptClient;
 }
@@ -349,6 +344,7 @@ void xptMiner_xptQueryWorkLoop()
 			// initiate new connection
 			EnterCriticalSection(&cs_xptClient);
 			xptClient = xptMiner_initateNewXptConnectionObject();
+
 	if(minerSettings.requestTarget.donationPercent > 0.1f)
 	{
 	  float donAmount = minerSettings.requestTarget.donationPercent;
@@ -391,7 +387,7 @@ void xptMiner_printHelp()
 	puts("                                 For most efficient mining, set to number of virtual cores if you have memory");
 	puts("   -s <num>                      Prime sieve max (default: 500000000)");
 	puts("Example usage:");
-	puts("   xptMiner.exe -o http://poolurl.com:10034 -u workername.pts_1 -p workerpass -t 4");
+	puts("   xptMiner.exe -o http://poolurl.com:10034 -u workername.ric_1 -p workerpass -t 4");
 }
 
 void xptMiner_parseCommandline(int argc, char **argv)
