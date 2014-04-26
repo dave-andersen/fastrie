@@ -1,5 +1,30 @@
 xptMiner changes:
 
+b15 (2013-04-26)
+	- Major internal architectural overhaul.  Sieving and
+	primality testing are now divided among all threads
+	instead of having each do a single operation.
+
+	The current consequence of this is a good speedup on
+	modest-core architectures while using substantially less
+	memory.  4-16 core machines should be particularly happy with
+	this upgrade.
+
+	Sieves can now be up to -s 4100000000 (4 billion) in size, though
+	this does not appear to be a particularly useful setting from
+	a performance perspective.
+
+	Single-core machines may suffer a 5-10% slowdown.  If this is
+	prohibitive, let me know, but for now I plan to let it stay
+	that way.
+
+	Very large, slow core machines (e.g., 64 core AMD) are running
+	MUCH slower.  Please either continue to use b14 or run multiple
+	copies of the miner, one per physical CPU, using taskset.
+
+	Windows users must use at least Vista (2006, NT 6.0) or later.  XP and
+	Windows Server 2003 are no longer supported.
+
 b14 (2014-03-29)
 	- Providing binaries linked against gmp6.  Tested and
 	  validated.  Decent speedup for newer Intel CPUs.
