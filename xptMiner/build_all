@@ -1,5 +1,5 @@
 #!/bin/sh
-VERSION=b14
+VERSION=b15
 MAKEFLAGS=-j4
 make clean
 make ${MAKEFLAGS} -f Makefile BUILD_ARCH='-msse4 -mavx -mavx2 -static'

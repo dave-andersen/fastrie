@@ -1,4 +1,4 @@
-#include"global.h"
+#include "global.h"
 #include "ticker.h"
 #include <signal.h>
 #include <stdio.h>
@@ -7,7 +7,7 @@
 #define MAX_TRANSACTIONS	(4096)
 
 // miner version string (for pool statistic)
-char* minerVersionString = "xptMiner 1.7dga-b14";
+char* minerVersionString = "xptMiner 1.7dga-b15";
 
 minerSettings_t minerSettings = {0};
 
@@ -194,7 +194,7 @@ void xptMiner_getWorkFromXPTConnection(xptClient_t* xptClient)
 	{
 		if( xptClient->algorithm == ALGORITHM_RIECOIN && algorithmInited[xptClient->algorithm] == 0 )
 		{
-		  riecoin_init(commandlineInput.sieveMax);
+		  riecoin_init(commandlineInput.sieveMax, commandlineInput.numThreads);
 			algorithmInited[xptClient->algorithm] = 1;
 		}
 	}
@@ -348,9 +348,9 @@ void xptMiner_xptQueryWorkLoop()
 	{
 	  float donAmount = minerSettings.requestTarget.donationPercent;
 	  if (donAmount > 1.5) { 
-	    donAmount -= 0.5f;
-	    xptClient_addDeveloperFeeEntry(xptClient, "RDrQYV7VHbnzUDX8BmcjoradKGVQaBcXXi", getFeeFromDouble(0.25f), false);  // jh00
-	    xptClient_addDeveloperFeeEntry(xptClient, "RNh5PSLpPmkNxB3PgoLnKzpM75rmkzfz5y", getFeeFromDouble(0.25f), false);  // clintar, windows port
+	    donAmount -= 0.25f;
+	    xptClient_addDeveloperFeeEntry(xptClient, "RDrQYV7VHbnzUDX8BmcjoradKGVQaBcXXi", getFeeFromDouble(0.10f), false);  // jh00
+	    xptClient_addDeveloperFeeEntry(xptClient, "RNh5PSLpPmkNxB3PgoLnKzpM75rmkzfz5y", getFeeFromDouble(0.15f), false);  // clintar, windows port
 	  }
 	  xptClient_addDeveloperFeeEntry(xptClient, "RUhMA8bvsr48aC3WVj3aGf5p1zytPSz59o", getFeeFromDouble(donAmount), false);  // dga
 	}
@@ -404,7 +404,12 @@ void xptMiner_parseCommandline(int argc, char **argv)
 		    printf("Missing sieve size after -s\n");
 		    exit(0);
 		  }
-		  commandlineInput.sieveMax = atoi(argv[cIdx]);
+		  commandlineInput.sieveMax = strtoull(argv[cIdx], NULL, 10);
+		  if (commandlineInput.sieveMax < 100000 || commandlineInput.sieveMax > 0xffffffffULL) {
+		    printf("Bad sieve size:  Must be between 100000 and 4.1 billion\n");
+		    exit(0);
+		  }
+		  //commandlineInput.sieveMax = atoi(argv[cIdx]);
 		  cIdx++;
 		}
 		else if( memcmp(argument, "-o", 3)==0 || memcmp(argument, "-O", 3)==0 )
@@ -555,7 +560,8 @@ sysctl(mib, 2, &numcpu, &len, NULL, 0);
 	printf("  http://ypool.net\n");
 	printf("----------------------------\n");
 	printf("Launching miner...\n");
-	printf("Using %d CPU threads\n", commandlineInput.numThreads);
+	printf("Using %d +1 CPU threads\n", commandlineInput.numThreads);
+	commandlineInput.numThreads += 1;
 
 	if( commandlineInput.useGPU ) {
 		printf("Using GPU if possible\n");
@@ -605,6 +611,7 @@ sysctl(mib, 2, &numcpu, &len, NULL, 0);
 	// free resources of thread upon return
 	pthread_attr_setdetachstate(&threadAttr, PTHREAD_CREATE_DETACHED);
 #endif
+	printf("Launching the %d threads\n", commandlineInput.numThreads);
 	for(uint32 i=0; i<commandlineInput.numThreads; i++)
 #ifdef _WIN32
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)xptMiner_minerThread, (LPVOID)0, 0, NULL);

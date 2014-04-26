@@ -8,7 +8,6 @@
 #endif
 
 #ifdef _WIN32
-#include<windows.h>
 typedef unsigned __int64 uint64_t;
 #else 
 #include <stdint.h>

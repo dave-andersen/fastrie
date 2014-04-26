@@ -1,10 +1,19 @@
+#ifndef _RIECOIN_GLOBAL_H_
+#define _RIECOIN_GLOBAL_H_
 
 #ifdef _WIN32
 #define NOMINMAX
+#define WINVER 0x600
+#define _WIN32_WINNT WINVER
+//#define NTDDI_VERSION NTDDI_VISTA
+//#include <winbase.h>
+
+#include <windows.h>
+
 #pragma comment(lib,"Ws2_32.lib")
-#include<winsock2.h>
-#include<ws2tcpip.h>
-#include"mpir/mpir.h"
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include "mpir/mpir.h"
 
 #else
 
@@ -25,9 +34,15 @@
 #define strcpy_s(dest,val,src) strncopy(dest,src,val)
 #define __debugbreak(); raise(SIGTRAP);
 #define CRITICAL_SECTION pthread_mutex_t
-#define EnterCriticalSection(Section) pthread_mutex_unlock(Section)
+#define CONDITION_VARIABLE pthread_cond_t
+#define EnterCriticalSection(Section) pthread_mutex_lock(Section)
 #define LeaveCriticalSection(Section) pthread_mutex_unlock(Section)
 #define InitializeCriticalSection(Section) pthread_mutex_init(Section, NULL)
+#define InitializeConditionVariable(cv) pthread_cond_init(cv, NULL)
+#define SleepConditionVariableCS(cv, Section, dwMilliseconds)  pthread_cond_wait(cv, Section)
+#define WakeConditionVariable(cv) pthread_cond_signal(cv)
+#define WakeAllConditionVariable(cv) pthread_cond_broadcast(cv)
+#define INFINITE 0 /* notused in unix */
 
 // lazy workaround
 typedef int SOCKET;
@@ -155,3 +170,5 @@ extern volatile uint32 total4ChainCount;
 
 extern volatile uint32 monitorCurrentBlockHeight;
 extern volatile uint32 monitorCurrentBlockTime;
+
+#endif /* _RIECOIN_GLOBAL_H_ */

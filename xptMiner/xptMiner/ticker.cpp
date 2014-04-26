@@ -1,3 +1,4 @@
+#include "global.h"
 #include "ticker.h"
 
 uint64_t getTimeMilliseconds(void) {
