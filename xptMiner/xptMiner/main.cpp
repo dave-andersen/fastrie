@@ -384,7 +384,7 @@ void xptMiner_printHelp()
 	puts("   -p                            The password used for login");
 	puts("   -t <num>                      The number of threads for mining (default is set to number of cores)");
 	puts("                                 For most efficient mining, set to number of virtual cores if you have memory");
-	puts("   -s <num>                      Prime sieve max (default: 500000000)");
+	puts("   -s <num>                      Prime sieve max (default: 900000000)");
 	puts("Example usage:");
 	puts("   xptMiner.exe -o http://poolurl.com:10034 -u workername.ric_1 -p workerpass -t 4");
 }
@@ -393,7 +393,7 @@ void xptMiner_parseCommandline(int argc, char **argv)
 {
 	sint32 cIdx = 1;
 	commandlineInput.donationPercent = 2.0f;
-	commandlineInput.sieveMax = 500000000;
+	commandlineInput.sieveMax = 900000000;
 
 	while( cIdx < argc )
 	{
