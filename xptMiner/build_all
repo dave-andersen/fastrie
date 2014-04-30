@@ -16,6 +16,11 @@ make ${MAKEFLAGS} -f Makefile BUILD_ARCH='-msse4 -static'
 strip xptminer
 mv -f xptminer xptminer-sse4-${VERSION}
 
+make clean
+make ${MAKEFLAGS} -f Makefile BUILD_ARCH='-msse -static'
+strip xptminer
+mv -f xptminer xptminer-oldamd-${VERSION}
+
 #The version of mingw I have doesn't do avx2
 MAKEFILE=Makefile.mingw
 

@@ -259,6 +259,12 @@ inline void silly_sort_indexes(uint32_t indexes[6]) {
 
 #define PENDING_SIZE 16
 
+inline void init_pending(uint32_t pending[PENDING_SIZE]) {
+  for (int i = 0; i < PENDING_SIZE; i++) {
+    pending[i] = 0;
+  }
+}
+
 inline void add_to_pending(uint8_t *sieve, uint32_t pending[PENDING_SIZE], uint32_t &pos, uint32_t ent) {
   __builtin_prefetch(&(sieve[ent>>3]));
   uint32_t old = pending[pos];
@@ -344,7 +350,7 @@ void update_remainders(uint32_t start_i, uint32_t end_i) {
 void process_sieve(uint8_t *sieve, uint32_t start_i, uint32_t end_i) {
   uint32_t pending[PENDING_SIZE];
   uint32_t pending_pos = 0;
-  for (int i = 0; i < PENDING_SIZE; i++) { pending[i] = 0; }
+  init_pending(pending);
   
   for (unsigned int i = start_i; i < end_i; i++) {
     uint32_t pno = i+startingPrimeIndex;
@@ -357,15 +363,13 @@ void process_sieve(uint8_t *sieve, uint32_t start_i, uint32_t end_i) {
       offsets[pno][f] -= riecoin_sieveSize;
     }
   }
-  unsigned int max_pending = PENDING_SIZE;
-  if (max_pending > (end_i - start_i)) {
-    max_pending = end_i - start_i;
-  }
-  for (unsigned int i = 0; i < max_pending; i++) {
-    uint32_t old = pending[i];
-    sieve[old>>3] |= (1<<(old&7));
-  }
 
+  for (unsigned int i = 0; i < PENDING_SIZE; i++) {
+    uint32_t old = pending[i];
+    if (old != 0) {
+      sieve[old>>3] |= (1<<(old&7));
+    }
+  }
 }
 
 
@@ -770,6 +774,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    //process_sieve(sieve, n_dense, (n_dense+n_sparse));
 
 	    uint32_t pending[PENDING_SIZE];
+	    init_pending(pending);
 	    uint32_t pending_pos = 0;
 	    for (uint32_t i = 0; i < segment_counts[loop]; i++) {
 	      add_to_pending(sieve, pending, pending_pos, segment_hits[loop][i]);
@@ -777,13 +782,11 @@ void riecoin_process(minerRiecoinBlock_t* block)
 
 	    DPRINTF("master - done adding segment counts to workers\n");
 
-	    unsigned int max_pending = PENDING_SIZE;
-	    if (max_pending > segment_counts[loop]) {
-	      max_pending = segment_counts[loop];
-	    }
-	    for (unsigned int i = 0; i < max_pending; i++) {
+	    for (unsigned int i = 0; i < PENDING_SIZE; i++) {
 	      uint32_t old = pending[i];
-	      sieve[old>>3] |= (1<<(old&7));
+	      if (old != 0) {
+		sieve[old>>3] |= (1<<(old&7));
+	      }
 	    }
 	  
 
