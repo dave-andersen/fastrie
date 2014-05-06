@@ -4,3 +4,4 @@ Some bugs to dig into:
 
  - Windows seems to work kinda sorta if supplied with a huge
    and weird -s flag. 
+   - one bug report noted a workerDoneQueue too large error
