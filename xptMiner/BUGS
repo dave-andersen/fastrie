@@ -1,0 +1,6 @@
+Some bugs to dig into:
+ - Not-reconnecting after pool disconnect observed by a few miners
+   oldamd build on 14.04 LTS
+
+ - Windows seems to work kinda sorta if supplied with a huge
+   and weird -s flag. 
