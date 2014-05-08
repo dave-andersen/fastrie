@@ -1,5 +1,6 @@
 #include"global.h"
 #include <chrono>
+#include <assert.h>
 #include "tsqueue.hpp"
 
 #define zeroesBeforeHashInPrime	8
@@ -14,7 +15,7 @@
 
 static const int NONCE_REGEN_SECONDS = 195;
 static const uint32_t riecoin_sieveBits = 23; /* normally 22. 8 million, or 1MB, tuned for Haswell L3 */
-static const uint32_t riecoin_sieveSize = (1<<riecoin_sieveBits); /* 1MB, tuned for L3 of Haswell */
+static const uint32_t riecoin_sieveSize = (1UL<<riecoin_sieveBits); /* 1MB, tuned for L3 of Haswell */
 static const uint32_t riecoin_sieveWords = riecoin_sieveSize/64;
 
 uint32_t riecoin_primeTestLimit;
@@ -45,7 +46,6 @@ uint32_t* riecoin_primeTestTable;
 uint32_t riecoin_primeTestSize;
 uint32_t riecoin_primeTestStoreOffsetsSize;
 uint32_t *inverts;
-uint32_t *remainders;
 mpz_t  z_primorial;
 uint32_t startingPrimeIndex;
 
@@ -153,10 +153,6 @@ void riecoin_init(uint64_t sieveMax, int numThreads)
 	inverts = (uint32_t *)malloc(sizeof(uint32_t) * (riecoin_primeTestSize));
 	if (inverts == NULL) {
 	  perror("could not malloc inverts");
-	}
-	remainders = (uint32_t *)malloc(sizeof(uint32_t) * (riecoin_primeTestSize));
-	if (remainders == NULL) {
-	  perror("could not malloc remainders");
 	}
 
 	mpz_t z_tmp, z_p;
@@ -269,6 +265,7 @@ inline void add_to_pending(uint8_t *sieve, uint32_t pending[PENDING_SIZE], uint3
   __builtin_prefetch(&(sieve[ent>>3]));
   uint32_t old = pending[pos];
   if (old != 0) {
+    assert(old < riecoin_sieveSize);
     sieve[old>>3] |= (1<<(old&7));
   }
   pending[pos] = ent;
@@ -307,7 +304,6 @@ void update_remainders(uint32_t start_i, uint32_t end_i) {
   for (auto i = start_i; i < end_i; i++) {
     uint32_t p = riecoin_primeTestTable[i];
     uint32_t remainder = mpz_tdiv_ui(tar, p);
-    remainders[i] = remainder;
     bool is_once_only = false;
 
     /* Also update the offsets unless once only */
@@ -367,6 +363,7 @@ void process_sieve(uint8_t *sieve, uint32_t start_i, uint32_t end_i) {
   for (unsigned int i = 0; i < PENDING_SIZE; i++) {
     uint32_t old = pending[i];
     if (old != 0) {
+      assert(old < riecoin_sieveSize);
       sieve[old>>3] |= (1<<(old&7));
     }
   }
@@ -740,6 +737,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	      uint32_t p = riecoin_primeTestTable[pno];
 	      for (uint32 f = 0; f < 6; f++) {
 		while (offsets[pno][f] < riecoin_sieveSize) {
+		  assert(offsets[pno][f] < riecoin_sieveSize);
 		  sieve[offsets[pno][f]>>3] |= (1<<((offsets[pno][f]&7)));
 		  offsets[pno][f] += p;
 		}
@@ -785,6 +783,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    for (unsigned int i = 0; i < PENDING_SIZE; i++) {
 	      uint32_t old = pending[i];
 	      if (old != 0) {
+		assert(old < riecoin_sieveSize);
 		sieve[old>>3] |= (1<<(old&7));
 	      }
 	    }
