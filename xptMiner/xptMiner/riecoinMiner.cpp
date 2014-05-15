@@ -596,7 +596,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	for(uint32 i=0; i<256; i++)
 	{
 		mpz_mul_2exp(z_target, z_target, 1);
-		if( (powHashU32[i/32]>>(i))&1 )
+		if( (powHashU32[i/32]>>(i%32))&1 )
 			z_target->_mp_d[0]++;
 	}
 	unsigned int trailingZeros = searchBits - 1 - zeroesBeforeHashInPrime - 256;
