@@ -8,12 +8,13 @@
 //#define NTDDI_VERSION NTDDI_VISTA
 //#include <winbase.h>
 
-#include <windows.h>
 
 #pragma comment(lib,"Ws2_32.lib")
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include "mpir/mpir.h"
+#include <windows.h>
+#include <stdint.h>
 
 #else
 
@@ -111,6 +112,8 @@ typedef struct
 	float donationPercent;
 }generalRequestTarget_t;
 
+#define STRATUM_JOB_ID_MAX_LEN 32
+
 #include"xptServer.h"
 #include"xptClient.h"
 
@@ -146,12 +149,13 @@ typedef struct
 	// remaining data
 	uint32	uniqueMerkleSeed;
 	uint32	height;
-	uint8	merkleRootOriginal[32]; // used to identify work
+	uint8	merkleRootOriginal[32]; // used to identify work in xpt
 	// uint8	target[32];
 	// uint8	targetShare[32];
 	// compact target
 	uint32  targetCompact;
 	uint32  shareTargetCompact;
+	uint8	job_id[STRATUM_JOB_ID_MAX_LEN+1]; // used to identify work in stratum
 }minerRiecoinBlock_t;
 
 #include"algorithm.h"
@@ -170,5 +174,31 @@ extern volatile uint32 total4ChainCount;
 
 extern volatile uint32 monitorCurrentBlockHeight;
 extern volatile uint32 monitorCurrentBlockTime;
+
+#define PROTOCOL_XPT 0
+#define PROTOCOL_STRATUM 1
+
+extern int protocol;
+
+extern char *bin2hex(const unsigned char *p, size_t len);
+
+typedef struct  
+{
+	char* workername;
+	char* workerpass;
+	char* host;
+	sint32 port;
+	sint32 numThreads;
+	uint32 ptsMemoryMode;
+	// GPU / OpenCL options
+	bool useGPU;
+	// mode option
+	uint32 mode;
+	float donationPercent;
+        uint32 sieveMax;
+        int protocol;
+} commandlineInput_t;
+
+extern commandlineInput_t commandlineInput;
 
 #endif /* _RIECOIN_GLOBAL_H_ */

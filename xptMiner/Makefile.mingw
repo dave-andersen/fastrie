@@ -4,14 +4,14 @@
 #CC = cc
 CC=x86_64-w64-mingw32-gcc
 CXX=x86_64-w64-mingw32-g++
-CXXFLAGS = -Wall -Wextra -std=c++0x -O2 -fomit-frame-pointer $(EXTRA_CXXFLAGS)
+CXXFLAGS = -Wall -Wextra -std=c++0x -O2 -fomit-frame-pointer $(EXTRA_CXXFLAGS) -fpermissive
 ifeq ($(OSVERSION),CYGWIN_NT-6.1)
 	#CXXFLAGS = -Wall -Wextra -std=gnu++0x -O2 -fomit-frame-pointer 
 	CXXFLAGS = -std=gnu++0x -O2 -fomit-frame-pointer -D_BSD_SOURCE $(EXTRA_CFLAGS)
-	CFLAGS = -std=gnu++0x -O2 -fomit-frame-pointer -D_BSD_SOURCE $(EXTRA_CFLAGS)
 endif
 
-CFLAGS = -Wall -Wextra -O2 -fomit-frame-pointer $(EXTRA_CFLAGS)
+CFLAGS = -Wall -Wextra
+CFLAGS += -O2 -fomit-frame-pointer $(EXTRA_CFLAGS) -fpermissive
 
 
 OSVERSION := $(shell uname -s)
@@ -42,8 +42,8 @@ CXXFLAGS += $(BUILD_ARCH)
 
 
 # You might need to edit these paths too
-LIBPATHS =  -L/home/dga/cross/lib
-INCLUDEPATHS = -IxptMiner/includes/ -IxptMiner/OpenCL -I/home/dga/cross/include
+LIBPATHS =  -L/usr/local/lib -L/usr/local/ssl/lib
+INCLUDEPATHS = -IxptMiner/includes/ -IxptMiner/OpenCL -I/usr/local/include
 
 ifeq ($(OSVERSION),Darwin)
 	EXTENSION = -mac
@@ -77,6 +77,16 @@ OBJS = \
 	xptMiner/transaction.o \
 	xptMiner/riecoinMiner.o
 
+INCLUDEPATHS += -IxptMiner/jansson
+
+OBJS += \
+        xptMiner/jansson/dump.c \
+        xptMiner/jansson/hashtable.c \
+        xptMiner/jansson/load.c \
+        xptMiner/jansson/strbuffer.c \
+        xptMiner/jansson/utf.c \
+        xptMiner/jansson/value.c
+
 ifeq ($(ENABLE_OPENCL),1)
 	OBJS += xptMiner/OpenCLObjects.o 
         OBJS += xptMiner/openCL.o
@@ -93,12 +103,14 @@ xptMiner/%.o: xptMiner/%.cpp
 
 xptMiner/%.o: xptMiner/%.c
 	$(CC) -c $(CFLAGS) $(INCLUDEPATHS) $< -o $@ 
+xptMiner/jansson/%.o: xptMiner/jansson/%.c
+	$(CC) -c $(CFLAGS) $(INCLUDEPATHS) $< -o $@ 
 
 xptminer$(EXTENSION): $(OBJS:xptMiner/%=xptMiner/%) $(JHLIB:xptMiner/jhlib/%=xptMiner/jhlib/%)
 	$(CXX) $(CFLAGS) $(LIBPATHS) $(INCLUDEPATHS) -static -o $@ $^ $(LIBS) -flto
 
 clean:
-	-rm -f xptminer
+	-rm -f xptminer.exe
 	-rm -f xptMiner/*.o
 	-rm -f xptMiner/jhlib/*.o
 

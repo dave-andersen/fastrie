@@ -1,6 +1,9 @@
 xptMiner changes:
 
-b15 (2013-04-26)
+c15 (2014-08-08)
+	- added support for stratum protocol (-m command line option)
+
+b15 (2014-04-26)
 	- Major internal architectural overhaul.  Sieving and
 	primality testing are now divided among all threads
 	instead of having each do a single operation.

@@ -27,10 +27,12 @@ void bitclient_addVarIntFromStream(stream_t* msgStream, uint64 varInt)
 	}
 }
 
-void bitclient_generateTxHash(uint32 userExtraNonceLength, uint8* userExtraNonce, uint32 coinBase1Length, uint8* coinBase1, uint32 coinBase2Length, uint8* coinBase2, uint8* txHash, uint32 mode)
+void bitclient_generateTxHash(uint32 extraNonce1Len, uint8* extraNonce1, uint32 userExtraNonceLength, uint8* userExtraNonce, uint32 coinBase1Length, uint8* coinBase1, uint32 coinBase2Length, uint8* coinBase2, uint8* txHash, uint32 mode)
 {
 	stream_t* streamTXData = streamEx_fromDynamicMemoryRange(1024*32);
 	stream_writeData(streamTXData, coinBase1, coinBase1Length);
+	if( extraNonce1Len != 0 )
+		stream_writeData(streamTXData, extraNonce1, extraNonce1Len );
 	stream_writeData(streamTXData, userExtraNonce, userExtraNonceLength);
 	stream_writeData(streamTXData, coinBase2, coinBase2Length);
 	sint32 transactionDataLength = 0;
@@ -73,6 +75,34 @@ void bitclient_calculateMerkleRoot(uint8* txHashes, uint32 numberOfTxHashes, uin
 	}
 	else
 	{
+#if 1
+		uint8 hashData[64];
+		uint8 hashOut[32];
+		memcpy(hashData, txHashes, 32);
+		for(uint32 i=1; i<numberOfTxHashes; i++)
+		{
+			memcpy(hashData+32, txHashes+(i*32), 32);
+			sha256_ctx sha256_ctx;
+			if( mode == TX_MODE_DOUBLE_SHA256 )
+			{
+				sha256_init(&sha256_ctx);
+				sha256_update(&sha256_ctx, hashData, 32*2);
+				sha256_final(&sha256_ctx, hashOut);
+				sha256_init(&sha256_ctx);
+				sha256_update(&sha256_ctx, hashOut, 32);
+				sha256_final(&sha256_ctx, hashData);
+			}
+			else
+			{
+				sha256_init(&sha256_ctx);
+				sha256_update(&sha256_ctx, hashData, 32*2);
+				sha256_final(&sha256_ctx, hashData);
+			}
+			char *hash2str = bin2hex((char *)hashData, 32);
+			free(hash2str);
+		}
+		memcpy(merkleRoot, hashData, 32);
+#else
 		// build merkle root tree
 		uint8* hashData = (uint8*)malloc(32*(numberOfTxHashes+1)*2+32*128); // space for tx hashes and tree + extra space just to be safe
 		uint32 hashCount = 0; // number of hashes written to hashData
@@ -140,5 +170,6 @@ void bitclient_calculateMerkleRoot(uint8* txHashes, uint32 numberOfTxHashes, uin
 			}
 		}
 		free(hashData);
+#endif
 	}
 }

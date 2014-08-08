@@ -1,3 +1,6 @@
+#ifndef __XPTSERVER_H__
+#define __XPTSERVER_H__
+
 typedef struct _xptServer_t xptServer_t;
 
 typedef struct  
@@ -35,14 +38,20 @@ typedef struct
 	uint32 targetCompact;
 	uint32 targetShareCompact;
 	// coinbase & tx info
+	uint8	extraNonce1[1024];
+	uint8	extraNonce2[1024];
+	uint16	extraNonce1Len;
+	uint16	extraNonce2Len;
+	uint8 *session_id;
 	uint16 coinBase1Size;
 	uint8 coinBase1[1024];
 	uint16 coinBase2Size;
 	uint8 coinBase2[1024];
 	uint32 txHashCount;
-	uint8 txHashes[32*4096]; // space for 4096 tx hashes
+	uint8 txHashes[32*4096UL]; // space for 4096 tx hashes
 	// time (set to current value of time(NULL) when we receive the work)
 	uint32 timeWork;
+	uint8 job_id[STRATUM_JOB_ID_MAX_LEN+1];
 }xptBlockWorkInfo_t;
 
 typedef struct _xptServer_t 
@@ -163,3 +172,5 @@ void xptPacketbuffer_finalizeWritePacket(xptPacketbuffer_t* pb);
 
 void xptPacketbuffer_writeString(xptPacketbuffer_t* pb, char* stringData, uint32 maxStringLength, bool* error);
 void xptPacketbuffer_readString(xptPacketbuffer_t* pb, char* stringData, uint32 maxStringLength, bool* error);
+
+#endif // __XPTSERVER_H__

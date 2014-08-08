@@ -7,7 +7,7 @@
 #define MAX_TRANSACTIONS	(4096)
 
 // miner version string (for pool statistic)
-char* minerVersionString = "xptMiner 1.7dga-b15";
+char* minerVersionString = "xptMiner 1.7dga-c15";
 
 minerSettings_t minerSettings = {0};
 
@@ -24,22 +24,6 @@ volatile uint32 total3ChainCount = 0;
 volatile uint32 total4ChainCount = 0;
 
 
-typedef struct  
-{
-	char* workername;
-	char* workerpass;
-	char* host;
-	sint32 port;
-	sint32 numThreads;
-	uint32 ptsMemoryMode;
-	// GPU / OpenCL options
-	bool useGPU;
-	// mode option
-	uint32 mode;
-	float donationPercent;
-        uint32 sieveMax;
-}commandlineInput_t;
-
 commandlineInput_t commandlineInput;
 
 
@@ -52,15 +36,18 @@ struct
 	uint32	height;
 	uint32	nBits;
 	uint32	timeBias;
-	uint8	merkleRootOriginal[32]; // used to identify work
+	uint8	merkleRootOriginal[32]; // used to identify work in xpt
+	uint8	job_id[STRATUM_JOB_ID_MAX_LEN+1]; // used to identify work in stratum
 	uint8	prevBlockHash[32];
 	uint8	target[32];
 	uint8	targetShare[32];
 	uint32  targetCompact;
 	uint32  shareTargetCompact;
 	// extra nonce info
+	uint8	extraNonce1[1024];
 	uint8	coinBase1[1024];
 	uint8	coinBase2[1024];
+	uint16	extraNonce1Len;
 	uint16	coinBase1Size;
 	uint16	coinBase2Size;
 	// transaction hashes
@@ -102,6 +89,7 @@ void xptMiner_submitShare(minerRiecoinBlock_t* block, uint8* nOffset)
 	xptShare->userExtraNonceLength = userExtraNonceLength;
 	memcpy(xptShare->userExtraNonceData, userExtraNonceData, userExtraNonceLength);
 	memcpy(xptShare->riecoin_nOffset, nOffset, 32);
+	memcpy(xptShare->job_id, block->job_id, STRATUM_JOB_ID_MAX_LEN);
 	xptClient_foundShare(xptClient, xptShare);
 	LeaveCriticalSection(&cs_xptClient);
 }
@@ -141,8 +129,12 @@ void *xptMiner_minerThread(void *arg)
 				memcpy(minerRiecoinBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
 				memcpy(minerRiecoinBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
 				minerRiecoinBlock.uniqueMerkleSeed = ++uniqueMerkleSeedGenerator;
+				memcpy(minerRiecoinBlock.job_id, workDataSource.job_id, sizeof(minerRiecoinBlock.job_id) );
 				// generate merkle root transaction
-				bitclient_generateTxHash(sizeof(uint32), (uint8*)&minerRiecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
+				if( commandlineInput.protocol == PROTOCOL_STRATUM )
+					bitclient_generateTxHash(workDataSource.extraNonce1Len, workDataSource.extraNonce1, sizeof(uint32), (uint8*)&minerRiecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
+				else
+					bitclient_generateTxHash(0, NULL, sizeof(uint32), (uint8*)&minerRiecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
 				bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerRiecoinBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
 				hasValidWork = true;
 				break;
@@ -208,8 +200,11 @@ void xptMiner_getWorkFromXPTConnection(xptClient_t* xptClient)
 	memcpy(workDataSource.targetShare, xptClient->blockWorkInfo.targetShare, 32);
 	workDataSource.targetCompact = xptClient->blockWorkInfo.targetCompact;
 	workDataSource.shareTargetCompact = xptClient->blockWorkInfo.targetShareCompact;
+	workDataSource.extraNonce1Len = xptClient->blockWorkInfo.extraNonce1Len;
 	workDataSource.coinBase1Size = xptClient->blockWorkInfo.coinBase1Size;
 	workDataSource.coinBase2Size = xptClient->blockWorkInfo.coinBase2Size;
+	if( commandlineInput.protocol == PROTOCOL_STRATUM )
+		memcpy(workDataSource.extraNonce1, xptClient->blockWorkInfo.extraNonce1, xptClient->blockWorkInfo.extraNonce1Len);
 	memcpy(workDataSource.coinBase1, xptClient->blockWorkInfo.coinBase1, xptClient->blockWorkInfo.coinBase1Size);
 	memcpy(workDataSource.coinBase2, xptClient->blockWorkInfo.coinBase2, xptClient->blockWorkInfo.coinBase2Size);
 
@@ -230,6 +225,7 @@ void xptMiner_getWorkFromXPTConnection(xptClient_t* xptClient)
 		printf("[00:00:00] Start mining\n");
 	}
 	workDataSource.height = xptClient->blockWorkInfo.height;
+	memcpy( workDataSource.job_id, xptClient->blockWorkInfo.job_id, sizeof(workDataSource.job_id) );
 	LeaveCriticalSection(&workDataSource.cs_work);
 	monitorCurrentBlockHeight = workDataSource.height;
         __sync_synchronize(); /* memory barrier needed if this isn't done in crit */
@@ -269,7 +265,7 @@ void xptMiner_xptQueryWorkLoop()
 			if( xptClient_isDisconnected(xptClient, NULL) == false )
 			{
 				uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
-				double speedRate = 0.0;
+
 				if( workDataSource.algorithm == ALGORITHM_RIECOIN )
 				{
 					// speed is represented as knumber/s (in steps of 0x1000)
@@ -385,6 +381,7 @@ void xptMiner_printHelp()
 	puts("   -t <num>                      The number of threads for mining (default is set to number of cores)");
 	puts("                                 For most efficient mining, set to number of virtual cores if you have memory");
 	puts("   -s <num>                      Prime sieve max (default: 900000000)");
+	puts("   -m                            user stratum protocol instead of xpt");
 	puts("Example usage:");
 	puts("   xptMiner.exe -o http://poolurl.com:10034 -u workername.ric_1 -p workerpass -t 4");
 }
@@ -394,6 +391,7 @@ void xptMiner_parseCommandline(int argc, char **argv)
 	sint32 cIdx = 1;
 	commandlineInput.donationPercent = 2.0f;
 	commandlineInput.sieveMax = 900000000;
+	commandlineInput.protocol = PROTOCOL_XPT;
 
 	while( cIdx < argc )
 	{
@@ -474,7 +472,10 @@ void xptMiner_parseCommandline(int argc, char **argv)
 		{
 			commandlineInput.useGPU = true;
 		}
-
+		else if( memcmp(argument, "-m", 3)==0 )
+		{
+			commandlineInput.protocol = PROTOCOL_STRATUM;
+		}
 		else if( memcmp(argument, "-d", 3)==0 )
 		{
 			if( cIdx >= argc )
@@ -559,7 +560,20 @@ sysctl(mib, 2, &numcpu, &len, NULL, 0);
 	printf("  author: jh00 (xptminer) dga (ric core)\n");
 	printf("  http://ypool.net\n");
 	printf("----------------------------\n");
-	printf("Launching miner...\n");
+	if( commandlineInput.protocol == PROTOCOL_XPT )
+	{
+		printf("Launching miner...  using XPT\n");
+	}
+	else if( commandlineInput.protocol == PROTOCOL_STRATUM )
+	{
+		printf("Launching miner...  using STRATUM\n");
+	}
+	else
+	{
+		printf("error: invalid protocol\n");
+		exit(0);
+	}
+	
 	printf("Using %d +1 CPU threads\n", commandlineInput.numThreads);
 	commandlineInput.numThreads += 1;
 
