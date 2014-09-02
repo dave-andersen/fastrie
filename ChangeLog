@@ -1,6 +1,11 @@
 xptMiner changes:
 
-b15 (2013-04-26)
+b16 (2014-09-01)
+	- Fixed critical bug that was breaking b15 on windows.
+	Bug does not seem to manifest on Linux, but I'm pushing
+	b16 just in case.
+
+b15 (2014-04-26)
 	- Major internal architectural overhaul.  Sieving and
 	primality testing are now divided among all threads
 	instead of having each do a single operation.
