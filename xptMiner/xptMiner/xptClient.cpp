@@ -745,7 +745,6 @@ void stratumSubscribeResponse( xptClient_t* xptClient, char *sret )
 				s = json_dumps(err_val, JSON_INDENT(3));
 			else
 				s = strdup("(unknown reason)");
-			//applog(LOG_ERR, "JSON-RPC call failed: %s", s);
 			printf ("%s\n",s);
 		}
 		goto out;
@@ -756,14 +755,12 @@ void stratumSubscribeResponse( xptClient_t* xptClient, char *sret )
 	xn2_size = json_integer_value(json_array_get(res_val, 2));
 
 	free(xptClient->blockWorkInfo.session_id);
-	//free(xptClient->blockWorkInfo.extraNonce1);
 
 	uint8	extraNonce1[1024];
 	uint16	extraNonce1Len;
 	
 	xptClient->blockWorkInfo.session_id = sid ? strdup(sid) : NULL;
 	xptClient->blockWorkInfo.extraNonce1Len = strlen(xnonce1) / 2;
-	// xptClient->blockWorkInfo.extraNonce1 = malloc(xptClient->blockWorkInfo.extraNonce1Len);
 	hex2bin(xptClient->blockWorkInfo.extraNonce1, xnonce1, xptClient->blockWorkInfo.extraNonce1Len);
 	xptClient->blockWorkInfo.extraNonce2Len = xn2_size;
 	
@@ -773,8 +770,6 @@ void stratumSubscribeResponse( xptClient_t* xptClient, char *sret )
 	printf("extraNonce1 %d %x\n", xptClient->blockWorkInfo.extraNonce1Len, *(unsigned int *)xptClient->blockWorkInfo.extraNonce1);
 	printf("extraNonce2Len %d\n", xptClient->blockWorkInfo.extraNonce2Len);
 
-	// pablo send auth?
-	
 	stratumSendAuthorize( xptClient );
 	
 out:
@@ -809,9 +804,7 @@ void stratumSubmitShareResponse( xptClient_t* xptClient, const char *sret )
 				s = json_dumps(err_val, JSON_INDENT(3));
 			else
 				s = strdup("(unknown reason)");
-			//applog(LOG_ERR, "JSON-RPC call failed: %s", s);
-			printf("Invalid share\n");
-			//printf("Reason: %s\n", s);
+			printf("Invalid share, reason: %s\n", s);
 			totalRejectedShareCount++;
 		}
 		goto out;
@@ -958,19 +951,6 @@ bool stratum_handle_method(xptClient_t *sctx, const char *s)
 	printf("received: %s\n", method );
 
 	if (!strcasecmp(method, "mining.notify")) {
-#if 0
-	json_t *mval, *mparams;
-		s = "{\"params\": [\"4e\", \"42873ad2"
-"1982c32b06360dbb802b7e41bba091391f7a45b312ff46043ff3f76b\" \"0100000001000000000000000000000000000000000"
-"0000000000000000000000000000000fffff"
-"fff2602ac11062f503253482f043598e15308\",\"0d2f7374726174756d506f6f6c2f000000000100f2052"
-"a010000001976a914deab459c13eb397640"
-"1215292704a0675d5be70c88ac00000000\", [], \"00000002\",\"02013000\", \"53e19835\", true], \"id\": null, \"method\": \"mining.notify\"}";
-	printf("replaced: %s\n", s );
-mval = JSON_LOADS(s, &err);
-	mparams = json_object_get(mval, "params");
-#endif
-
 		ret = stratum_notify(sctx, params);
 		goto out;
 	}
@@ -1044,10 +1024,25 @@ bool xptClient_process(xptClient_t* xptClient)
 
 		memset(s, 0, RBUFSIZE);
 		n = recv(xptClient->clientSocket, s, RECVSIZE, 0);
-		if (n > 0)
-			stratum_buffer_append(xptClient, s);
-		else
-			return false;
+		if( n <= 0 )
+		{
+		#ifdef _WIN32
+			// receive error, is it a real error or just because of non blocking sockets?
+			if( WSAGetLastError() != WSAEWOULDBLOCK || n == 0)
+			{
+				xptClient->disconnected = true;
+				return false;
+			}
+		#else
+    			if(errno != EAGAIN || n == 0)
+    			{
+				xptClient->disconnected = true;
+				return false;
+    			}
+		#endif
+			return true;
+		}
+		stratum_buffer_append(xptClient, s);
 
 		if (strstr((char *)xptClient->recvBuffer->buffer, "\n"))
 		{

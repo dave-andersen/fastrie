@@ -7,7 +7,7 @@
 #define MAX_TRANSACTIONS	(4096)
 
 // miner version string (for pool statistic)
-char* minerVersionString = "xptMiner 1.7dga-c15";
+char* minerVersionString = "xptMiner 1.7dga-c16";
 
 minerSettings_t minerSettings = {0};
 
@@ -359,7 +359,14 @@ void xptMiner_xptQueryWorkLoop()
 			else
 			{
 				LeaveCriticalSection(&cs_xptClient);
-				printf("Connected to server using x.pushthrough(xpt) protocol\n");
+				if( commandlineInput.protocol == PROTOCOL_STRATUM )
+				{
+					printf("Connected to server using stratum protocol. DEVELOPER FEES NOT SUPPORTED\n");
+				}
+				else
+				{
+					printf("Connected to server using x.pushthrough(xpt) protocol\n");
+				}
 				total2ChainCount = 0;
 				total3ChainCount = 0;
 				total4ChainCount = 0;
@@ -372,7 +379,11 @@ void xptMiner_xptQueryWorkLoop()
 
 void xptMiner_printHelp()
 {
+#ifdef _WIN32
 	puts("Usage: xptMiner.exe [options]");
+#else
+	puts("Usage: ./xptMiner [options]");
+#endif
 	puts("General options:");
 	puts("   -o, -O                        The miner will connect to this url");
 	puts("                                 You can specify a port after the url using -o url:port");
@@ -381,9 +392,13 @@ void xptMiner_printHelp()
 	puts("   -t <num>                      The number of threads for mining (default is set to number of cores)");
 	puts("                                 For most efficient mining, set to number of virtual cores if you have memory");
 	puts("   -s <num>                      Prime sieve max (default: 900000000)");
-	puts("   -m                            user stratum protocol instead of xpt");
+	puts("   -m                            Use stratum protocol instead of xpt");
 	puts("Example usage:");
+#ifdef _WIN32
 	puts("   xptMiner.exe -o http://poolurl.com:10034 -u workername.ric_1 -p workerpass -t 4");
+#else
+	puts("   ./xptMiner -o http://poolurl.com:10034 -u workername.ric_1 -p workerpass -t 4");
+#endif
 }
 
 void xptMiner_parseCommandline(int argc, char **argv)
@@ -498,7 +513,7 @@ void xptMiner_parseCommandline(int argc, char **argv)
 		}
 		else
 		{
-			printf("'%s' is an unknown option.\nType jhPrimeminer.exe --help for more info\n", argument); 
+			printf("'%s' is an unknown option.\nUse the --help parameter for more info\n", argument); 
 			exit(-1);
 		}
 	}
@@ -557,8 +572,7 @@ sysctl(mib, 2, &numcpu, &len, NULL, 0);
 	minerSettings.useGPU = commandlineInput.useGPU;
 	printf("----------------------------\n");
 	printf("  xptMiner/ric/dga (%s)\n", minerVersionString);
-	printf("  author: jh00 (xptminer) dga (ric core)\n");
-	printf("  http://ypool.net\n");
+	printf("  author: jh00 (xptminer originally for http://ypool.net) dga (ric core)\n");
 	printf("----------------------------\n");
 	if( commandlineInput.protocol == PROTOCOL_XPT )
 	{

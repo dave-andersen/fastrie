@@ -794,6 +794,7 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	    riecoinPrimeTestWork w;
 	    w.testWork.n_indexes = 0;
 	    w.testWork.loop = loop;
+	    w.type = TYPE_CHECK;
 
 	    bool do_reset = false;
 	    uint64_t *sieve64 = (uint64_t *)sieve;
