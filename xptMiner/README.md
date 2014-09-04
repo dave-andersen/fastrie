@@ -23,6 +23,8 @@ sudo yum install openssl openssl-devel openssh-clients gmp gmp-devel gmp-static 
 Ubuntu:
 sudo apt-get -y install build-essential m4 openssl libssl-dev git libjson0 libjson0-dev libcurl4-openssl-dev wget
 
+you'll also need libjansson-dev if you are building for linux
+
 BUILDING
 ========
 
