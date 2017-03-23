@@ -2,13 +2,13 @@
 #INT_LIB=mpir
 CXX = g++
 CC = cc
-CXXFLAGS = -Wall -Wextra -std=c++0x -O3 -fomit-frame-pointer  -g -fpermissive
+CXXFLAGS = -Wall -Wextra -std=c++11 -O3 -fomit-frame-pointer  -g -fpermissive
 
 CFLAGS = -Wall -Wextra -O3 -fomit-frame-pointer -g -fpermissive
 
 
 OSVERSION := $(shell uname -s)
-LIBS = -lcrypto -lssl -pthread  -ldl -ljansson
+LIBS = -lcrypto -lssl -pthread  -ldl -ljansson -lprimesieve
 ifeq ($(INT_LIB),mpir)
        MPIR_DEF=-DUSE_MPIR
        CFLAGS +=$(MPIR_DEF)

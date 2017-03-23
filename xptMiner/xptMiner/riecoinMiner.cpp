@@ -3,6 +3,7 @@
 #include <assert.h>
 #include "tsqueue.hpp"
 #include <math.h>
+#include <primesieve.hpp>
 
 #define zeroesBeforeHashInPrime	8
 
@@ -14,10 +15,10 @@
 #define DPRINTF(fmt, ...) do { } while(0)
 #endif
 
-static const int NONCE_REGEN_SECONDS = 195;
-static const uint32_t riecoin_sieveBits = 23; /* normally 22. 8 million, or 1MB, tuned for Haswell L3 */
-static const uint32_t riecoin_sieveSize = (1UL<<riecoin_sieveBits); /* 1MB, tuned for L3 of Haswell */
-static const uint32_t riecoin_sieveWords = riecoin_sieveSize/64;
+static constexpr int NONCE_REGEN_SECONDS = 195;
+static constexpr uint32_t riecoin_sieveBits = 23; /* normally 22. 8 million, or 1MB, tuned for Haswell L3 */
+static constexpr uint32_t riecoin_sieveSize = (1UL<<riecoin_sieveBits); /* 1MB, tuned for L3 of Haswell */
+static constexpr uint32_t riecoin_sieveWords = riecoin_sieveSize/64;
 
 uint32_t riecoin_primeTestLimit;
 uint32_t num_entries_per_segment = 0;
@@ -33,16 +34,16 @@ uint32 riecoin_primorialNumber = 40; /* 15 is the 64 bit limit */
  * the current settings of 8M for sieveSize, this means 64
  * iterations.
  */
-static const uint64_t max_increments = (1ULL<<29); /* 36 = 39.  29 = 40 */
-static const uint64_t maxiter = (max_increments/riecoin_sieveSize);
+static constexpr uint64_t max_increments = (1ULL<<29); /* 36 = 39.  29 = 40 */
+static constexpr uint64_t maxiter = (max_increments/riecoin_sieveSize);
 
 //static const uint32_t primorial_offset = 97;
-static const uint32_t primorial_offset = 16057; /* For > 26 or so */
+static constexpr uint32_t primorial_offset = 16057; /* For > 26 or so */
 
 //static uint32 primeTupleBias[6] = {0,4,6,10,12,16};
 static uint32 primeTupleOffset[6] = {0, 4, 2, 4, 2, 4};
 
-static const uint32_t riecoin_denseLimit = 16384; /* A few cachelines */
+static constexpr uint32_t riecoin_denseLimit = 16384; /* A few cachelines */
 uint32_t* riecoin_primeTestTable;
 uint32_t riecoin_primeTestSize;
 uint32_t riecoin_primeTestStoreOffsetsSize;
@@ -50,10 +51,8 @@ uint32_t *inverts;
 mpz_t  z_primorial;
 uint32_t startingPrimeIndex;
 
-#define WORK_INDEXES 64
+static constexpr int WORK_INDEXES = 64;
 uint32_t *segment_counts;
-
-
 
 enum JobType { TYPE_CHECK, TYPE_MOD, TYPE_SIEVE };
 
@@ -87,8 +86,6 @@ bool there_is_a_master = false;
 CRITICAL_SECTION master_lock;
 CRITICAL_SECTION bucket_lock; /* careful */
 
-uint32_t int_invert_mpz(mpz_t &z_a, uint32_t nPrime);
-
 /* These are globals that are written only by the 'master' thread,
  * but that are read by all of the verifiers */
 
@@ -98,8 +95,8 @@ minerRiecoinBlock_t* verify_block;
 void riecoin_init(uint64_t sieveMax, int numThreads)
 {
         N_THREADS = numThreads;
-	N_SIEVE_WORKERS = std::min(1, numThreads/4);
-	N_SIEVE_WORKERS = std::max(N_SIEVE_WORKERS, 8);
+	N_SIEVE_WORKERS = std::max(1, numThreads/4);
+	N_SIEVE_WORKERS = std::min(N_SIEVE_WORKERS, 8);
         InitializeCriticalSection(&master_lock);
 	InitializeCriticalSection(&bucket_lock);
         mpz_init(z_verify_target);
@@ -108,37 +105,15 @@ void riecoin_init(uint64_t sieveMax, int numThreads)
         riecoin_primeTestLimit = sieveMax;
 	printf("Generating table of small primes for Riecoin...\n");
 	// generate prime table
-	riecoin_primeTestTable = (uint32*)malloc(sizeof(uint32)*(riecoin_primeTestLimit/4+10));
-	if (riecoin_primeTestTable == NULL) {
-	  perror("could not allocate prime test table");
-	  exit(-1);
-	}
-	riecoin_primeTestSize = 0;
-
-	// generate prime table using Sieve of Eratosthenes
-	uint8* vfComposite = (uint8*)malloc(sizeof(uint8)*(riecoin_primeTestLimit+7)/8);
-	if (vfComposite == NULL) {
-	  perror("could not allocate vfComposite table");
-	  exit(-1);
-	}
-	memset(vfComposite, 0x00, sizeof(uint8)*(riecoin_primeTestLimit+7)/8);
-	for (unsigned int nFactor = 2; nFactor * nFactor < riecoin_primeTestLimit; nFactor++)
 	{
-		if( vfComposite[nFactor>>3] & (1<<(nFactor&7)) )
-			continue;
-		for (unsigned int nComposite = nFactor * nFactor; nComposite < riecoin_primeTestLimit; nComposite += nFactor)
-			vfComposite[nComposite>>3] |= 1<<(nComposite&7);
-	}
-	for (unsigned int n = 2; n < riecoin_primeTestLimit; n++)
-	{
-		if ( (vfComposite[n>>3] & (1<<(n&7)))==0 )
-		{
-			riecoin_primeTestTable[riecoin_primeTestSize] = n;
-			riecoin_primeTestSize++;
+		std::vector<uint32_t> pvec;
+		primesieve::generate_primes(riecoin_primeTestLimit, &pvec);
+		riecoin_primeTestTable = (uint32_t*)malloc(sizeof(uint32)*pvec.size());
+		for (size_t i = 0; i < pvec.size(); i++) {
+			riecoin_primeTestTable[i] = pvec[i];
 		}
+		riecoin_primeTestSize = pvec.size();
 	}
-	riecoin_primeTestTable = (uint32_t*)realloc(riecoin_primeTestTable, sizeof(uint32)*riecoin_primeTestSize);
-	free(vfComposite);
 
 	DPRINTF("Table with %d entries generated\n", riecoin_primeTestSize);
 
@@ -151,7 +126,7 @@ void riecoin_init(uint64_t sieveMax, int numThreads)
 #if DEBUG
 	gmp_printf("z_primorial: %Zd\n", z_primorial);
 #endif
-	inverts = (uint32_t *)malloc(sizeof(uint32_t) * (riecoin_primeTestSize));
+	inverts = (uint32_t *)calloc(sizeof(uint32_t), riecoin_primeTestSize);
 	if (inverts == NULL) {
 	  perror("could not malloc inverts");
 	}
@@ -293,8 +268,7 @@ thread_local uint32_t *offset_stack = NULL;
 
 void update_remainders(uint32_t start_i, uint32_t end_i) {
   mpz_t tar;
-  mpz_init(tar);
-  mpz_set(tar, z_verify_target);
+  mpz_init_set(tar, z_verify_target);
   mpz_add(tar, tar, z_verify_remainderPrimorial);
   int n_offsets = 0;
   static const int OFFSET_STACK_SIZE = 16384;
@@ -353,16 +327,17 @@ void process_sieve(uint8_t *sieve, uint32_t start_i, uint32_t end_i) {
     uint32_t pno = i+startingPrimeIndex;
     uint32_t p = riecoin_primeTestTable[pno];
     for (uint32 f = 0; f < 6; f++) {
-      while (offsets[pno][f] < riecoin_sieveSize) {
-	add_to_pending(sieve, pending, pending_pos, offsets[pno][f]);
-	offsets[pno][f] += p;
+      auto opnof = offsets[pno][f];
+      while (opnof < riecoin_sieveSize) {
+	add_to_pending(sieve, pending, pending_pos, opnof);
+	opnof += p;
       }
-      offsets[pno][f] -= riecoin_sieveSize;
+      offsets[pno][f] = (opnof - riecoin_sieveSize);
     }
   }
 
   for (unsigned int i = 0; i < PENDING_SIZE; i++) {
-    uint32_t old = pending[i];
+    const uint32_t old = pending[i];
     if (old != 0) {
       assert(old < riecoin_sieveSize);
       sieve[old>>3] |= (1<<(old&7));
@@ -383,16 +358,10 @@ void verify_thread() {
    * for the one-in-a-whatever case that Fermat is wrong.
    */
 
-  mpz_t z_ft_r;
-  mpz_init(z_ft_r);
+  mpz_t z_ft_r, z_ft_n, z_temp, z_temp2;
+  mpz_inits(z_ft_r, z_ft_n, z_temp, z_temp2, NULL);
   mpz_t z_ft_b;
   mpz_init_set_ui(z_ft_b, 2);
-  mpz_t z_ft_n;
-  mpz_init(z_ft_n);
-  mpz_t z_temp, z_temp2;
-  mpz_init(z_temp);
-  mpz_init(z_temp2);
-
 
   while (1) {
     auto job = verifyWorkQueue.pop_front();

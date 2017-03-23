@@ -10,6 +10,7 @@ This build supports Linux and Windows, the latter via the Makefile.mingw.
 Authors:  xptMiner was written by jh00;
           This version is based upon the Unix port by Clintar
           The riecoin mining core was rewritten by dga based upon jh00's version.
+	  Stratum support was added by Gatra.
 
 Some instructions to get started
 
@@ -19,9 +20,12 @@ PREREQUISITES
 CentOS:
 sudo yum groupinstall "Development Tools"
 sudo yum install openssl openssl-devel openssh-clients gmp gmp-devel gmp-static git wget
+# Install primesieve - is there a yum package for it?
 
 Ubuntu:
-sudo apt-get -y install build-essential m4 openssl libssl-dev git libjson0 libjson0-dev libcurl4-openssl-dev wget
+sudo apt-get -y install build-essential m4 openssl libssl-dev git libjson0 libjson0-dev libcurl4-openssl-dev wget primesieve
+
+Install Primesieve
 
 you'll also need libjansson-dev if you are building for linux
 
