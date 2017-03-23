@@ -5,11 +5,33 @@
 #include <errno.h>
 #include <cstring>
 #endif
+#include <jansson.h>
+
+#if JANSSON_MAJOR_VERSION >= 2
+#define JSON_LOADS(str, err_ptr) json_loads((str), 0, (err_ptr))
+#else
+#define JSON_LOADS(str, err_ptr) json_loads((str), (err_ptr))
+#endif
 
 /*
  * Tries to establish a connection to the given ip:port
  * Uses a blocking connect operation
  */
+
+
+#define STRATUM_STATE_INIT 0
+#define STRATUM_STATE_SUBSCRIBE_SENT 1
+#define STRATUM_STATE_SUBSCRIBE_RCVD 2
+#define STRATUM_STATE_AUTHORIZE_SENT 3
+#define STRATUM_STATE_AUTHORIZE_RCVD 4
+#define STRATUM_STATE_INIT_DONE 5
+#define STRATUM_STATE_SHARE_SENT 6
+
+int stratumState = STRATUM_STATE_INIT;
+
+void stratumClient_sendSubscribe(xptClient_t* sctx);
+
+
 #ifdef _WIN32
 SOCKET xptClient_openConnection(char *IP, int Port)
 {
@@ -42,6 +64,100 @@ int xptClient_openConnection(char *IP, int Port)
 	return s;
 }
 
+
+#define bswap_32(x) ((((x) << 24) & 0xff000000u) | (((x) << 8) & 0x00ff0000u) \
+                   | (((x) >> 8) & 0x0000ff00u) | (((x) >> 24) & 0x000000ffu))
+
+static inline uint32_t swab32(uint32_t v)
+{
+	return bswap_32(v);
+}
+
+#if !HAVE_DECL_BE32DEC
+static inline uint32_t be32dec(const void *pp)
+{
+	const uint8_t *p = (uint8_t const *)pp;
+	return ((uint32_t)(p[3]) + ((uint32_t)(p[2]) << 8) +
+	    ((uint32_t)(p[1]) << 16) + ((uint32_t)(p[0]) << 24));
+}
+#endif
+
+#if !HAVE_DECL_LE32DEC
+static inline uint32_t le32dec(const void *pp)
+{
+	const uint8_t *p = (uint8_t const *)pp;
+	return ((uint32_t)(p[0]) + ((uint32_t)(p[1]) << 8) +
+	    ((uint32_t)(p[2]) << 16) + ((uint32_t)(p[3]) << 24));
+}
+#endif
+
+#if !HAVE_DECL_BE32ENC
+static inline void be32enc(void *pp, uint32_t x)
+{
+	uint8_t *p = (uint8_t *)pp;
+	p[3] = x & 0xff;
+	p[2] = (x >> 8) & 0xff;
+	p[1] = (x >> 16) & 0xff;
+	p[0] = (x >> 24) & 0xff;
+}
+#endif
+
+#if !HAVE_DECL_LE32ENC
+static inline void le32enc(void *pp, uint32_t x)
+{
+	uint8_t *p = (uint8_t *)pp;
+	p[0] = x & 0xff;
+	p[1] = (x >> 8) & 0xff;
+	p[2] = (x >> 16) & 0xff;
+	p[3] = (x >> 24) & 0xff;
+}
+#endif
+
+
+char *bin2hex(const unsigned char *p, size_t len)
+{
+	int i;
+	char *s = malloc((len * 2) + 1);
+	if (!s)
+	{
+		printf("malloc failed in bin2hex\n");
+		return NULL;
+	}
+
+	for (i = 0; i < len; i++)
+	{
+		sprintf(s + (i * 2), "%02x", (unsigned int) p[i]);
+	}
+
+	return s;
+}
+
+bool hex2bin(unsigned char *p, const char *hexstr, size_t len)
+{
+	char hex_byte[3];
+	char *ep;
+
+	hex_byte[2] = '\0';
+
+	while (*hexstr && len) {
+		if (!hexstr[1]) {
+			return false;
+		}
+		hex_byte[0] = hexstr[0];
+		hex_byte[1] = hexstr[1];
+		*p = (unsigned char) strtol(hex_byte, &ep, 16);
+		if (*ep) {
+			return false;
+		}
+		p++;
+		hexstr += 2;
+		len--;
+	}
+
+	return (len == 0 && *hexstr == 0) ? true : false;
+}
+
+
 /*
  * Creates a new xptClient connection object, does not initiate connection right away
  */
@@ -58,6 +174,7 @@ xptClient_t* xptClient_create()
 	InitializeCriticalSection(&xptClient->cs_shareSubmit);
 	InitializeCriticalSection(&xptClient->cs_workAccess);
 	xptClient->list_shareSubmitQueue = simpleList_create(4);
+	xptClient->recvBuffer->buffer[0] = '\0';
 	// return object
 	return xptClient;
 }
@@ -102,7 +219,15 @@ bool xptClient_connect(xptClient_t* xptClient, generalRequestTarget_t* target)
 	// reset old work info
 	memset(&xptClient->blockWorkInfo, 0x00, sizeof(xptBlockWorkInfo_t));
 	// send worker login
-	xptClient_sendWorkerLogin(xptClient);
+	if( commandlineInput.protocol == PROTOCOL_XPT )
+	{
+		xptClient_sendWorkerLogin(xptClient);
+	}
+	else if( commandlineInput.protocol == PROTOCOL_STRATUM )
+	{
+		stratumClient_sendSubscribe(xptClient);
+	}
+	
 	// mark as connected
 	xptClient->disconnected = false;
 	// return success
@@ -391,11 +516,114 @@ void xptClient_sendWorkerLogin(xptClient_t* xptClient)
 	send(xptClient->clientSocket, (const char*)(xptClient->sendBuffer->buffer), xptClient->sendBuffer->parserIndex, 0);
 }
 
+
+#define USER_AGENT "xptminer"
+
+static const char *get_stratum_session_id(json_t *val)
+{
+	json_t *arr_val;
+	int i, n;
+
+	arr_val = json_array_get(val, 0);
+	if (!arr_val || !json_is_array(arr_val))
+		return NULL;
+	n = json_array_size(arr_val);
+	for (i = 0; i < n; i++) {
+		const char *notify;
+		json_t *arr = json_array_get(arr_val, i);
+
+		if (!arr || !json_is_array(arr))
+			break;
+		notify = json_string_value(json_array_get(arr, 0));
+		if (!notify)
+			continue;
+		if (!strcasecmp(notify, "mining.notify"))
+			return json_string_value(json_array_get(arr, 1));
+	}
+	return NULL;
+}
+
+
+void stratumClient_sendSubscribe(xptClient_t* sctx)
+{
+	char *s, *sret = NULL;
+	const char *sid, *xnonce1;
+	json_t *val = NULL, *res_val, *err_val;
+	json_error_t err;
+	bool ret = false, retry = false;
+
+	s = malloc(128 + (sctx->blockWorkInfo.session_id ? strlen(sctx->blockWorkInfo.session_id) : 0));
+	if (retry)
+		sprintf(s, "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": []}\n");
+	else if (sctx->blockWorkInfo.session_id)
+		sprintf(s, "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\"" USER_AGENT "\", \"%s\"]}\n", sctx->blockWorkInfo.session_id);
+	else
+		sprintf(s, "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\"" USER_AGENT "\"]}\n");
+
+	send(sctx->clientSocket, (const char*)(s), strlen(s), 0);
+	
+	stratumState = STRATUM_STATE_SUBSCRIBE_SENT;
+
+}
+
+void stratumSendAuthorize(xptClient_t* sctx)
+{
+	char *s, *sret = NULL;
+	const char *sid, *xnonce1;
+	json_t *val = NULL, *res_val, *err_val;
+	json_error_t err;
+	bool ret = false, retry = false;
+
+	s = malloc(80 + strlen(sctx->username) + strlen(sctx->password));
+	sprintf(s, "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\"%s\", \"%s\"]}\n",
+	        sctx->username, sctx->password);
+
+	send(sctx->clientSocket, (const char*)(s), strlen(s), 0);
+	
+	stratumState = STRATUM_STATE_AUTHORIZE_SENT;
+}
+
 /*
  * Sends the share packet
  */
+void stratumClient_sendShare(xptClient_t* xptClient, xptShareToSubmit_t* xptShareToSubmit)
+{
+	char s[345];
+	uint64_t ntime = 0;
+	uint32_t nonce[8];
+	char *ntimestr, *noncestr, *xnonce2str;
+	int i;
+	be32enc( &ntime, xptShareToSubmit->nTime );
+	ntime <<= 32;
+
+	for (i = 0; i < 8; i++)
+		nonce[i] = swab32( *(((uint32_t *)xptShareToSubmit->riecoin_nOffset) + 8 - 1 - i) );
+
+	ntimestr = bin2hex((const unsigned char *)&ntime, 8);
+	noncestr = bin2hex((const unsigned char *)nonce, 32);
+	xnonce2str = bin2hex(xptShareToSubmit->userExtraNonceData, xptShareToSubmit->userExtraNonceLength);
+
+	sprintf(s,
+		"{\"method\": \"mining.submit\", \"params\": [\"%s\", \"%s\", \"%s\", \"%s\", \"%s\"], \"id\":4}\n",
+		xptClient->username, xptShareToSubmit->job_id, xnonce2str, ntimestr, noncestr);
+	free(ntimestr);
+	free(noncestr);
+	free(xnonce2str);
+	printf("tx: %s\n", s);
+
+	stratumState = STRATUM_STATE_SHARE_SENT;
+	send(xptClient->clientSocket, (const char*)(s), strlen(s), 0);
+}
+
+
 void xptClient_sendShare(xptClient_t* xptClient, xptShareToSubmit_t* xptShareToSubmit)
 {
+	if( commandlineInput.protocol == PROTOCOL_STRATUM )
+	{
+		stratumClient_sendShare(xptClient, xptShareToSubmit);
+		return;
+	}
+
 	// build the packet
 	bool sendError = false;
 	xptPacketbuffer_beginWritePacket(xptClient->sendBuffer, XPT_OPC_C_SUBMIT_SHARE);
@@ -471,6 +699,302 @@ bool xptClient_processPacket(xptClient_t* xptClient)
 /*
  * Checks for new received packets and connection events (e.g. closed connection)
  */
+#define RBUFSIZE 2048
+#define RECVSIZE (RBUFSIZE - 4)
+
+static void stratum_buffer_append(xptClient_t *sctx, const char *s)
+{
+	size_t old, newSize;
+
+	old = strlen(sctx->recvBuffer->buffer);
+	newSize = old + strlen(s) + 1;
+	if (newSize >= sctx->recvIndex) {
+		sctx->recvIndex = newSize + (RBUFSIZE - (newSize % RBUFSIZE));
+		sctx->recvBuffer->buffer = realloc(sctx->recvBuffer->buffer, sctx->recvIndex);
+	}
+	strcpy(sctx->recvBuffer->buffer + old, s);
+}
+
+void stratumSubscribeResponse( xptClient_t* xptClient, char *sret )
+{
+//sret = "{\"error\": null, \"id\": 1, \"result\": [[\"mining.notify\", \"ae6812eb4cd7735a302a8a9dd95cf71f\"], \"f800000d\", 4]}";
+	xptClient->algorithm = ALGORITHM_RIECOIN;
+
+	char *s = malloc(128);
+	json_t *val = NULL, *res_val, *err_val;
+	json_error_t err;
+	const char *sid, *xnonce1;
+	int xn2_size;
+
+	
+	val = JSON_LOADS(sret, &err);
+	free(sret);
+	if (!val) {
+//		applog(LOG_ERR, "JSON decode failed(%d): %s", err.line, err.text);
+		goto out;
+	}
+
+	res_val = json_object_get(val, "result");
+	err_val = json_object_get(val, "error");
+
+	if (!res_val || json_is_null(res_val) ||
+	    (err_val && !json_is_null(err_val))) {
+		{
+			free(s);
+			if (err_val)
+				s = json_dumps(err_val, JSON_INDENT(3));
+			else
+				s = strdup("(unknown reason)");
+			printf ("%s\n",s);
+		}
+		goto out;
+	}
+
+	sid = get_stratum_session_id(res_val);
+	xnonce1 = json_string_value(json_array_get(res_val, 1));
+	xn2_size = json_integer_value(json_array_get(res_val, 2));
+
+	free(xptClient->blockWorkInfo.session_id);
+
+	uint8	extraNonce1[1024];
+	uint16	extraNonce1Len;
+	
+	xptClient->blockWorkInfo.session_id = sid ? strdup(sid) : NULL;
+	xptClient->blockWorkInfo.extraNonce1Len = strlen(xnonce1) / 2;
+	hex2bin(xptClient->blockWorkInfo.extraNonce1, xnonce1, xptClient->blockWorkInfo.extraNonce1Len);
+	xptClient->blockWorkInfo.extraNonce2Len = xn2_size;
+	
+	stratumState = STRATUM_STATE_SUBSCRIBE_RCVD;
+	
+	printf("session id %s\n", xptClient->blockWorkInfo.session_id);
+	printf("extraNonce1 %d %x\n", xptClient->blockWorkInfo.extraNonce1Len, *(unsigned int *)xptClient->blockWorkInfo.extraNonce1);
+	printf("extraNonce2Len %d\n", xptClient->blockWorkInfo.extraNonce2Len);
+
+	stratumSendAuthorize( xptClient );
+	
+out:
+	free(s);
+
+	return;
+}
+
+
+
+void stratumSubmitShareResponse( xptClient_t* xptClient, const char *sret )
+{
+	char *s = malloc(128);
+	json_t *val = NULL, *res_val, *err_val;
+	json_error_t err;
+	
+	val = JSON_LOADS(sret, &err);
+	free(sret);
+	if (!val) {
+//		applog(LOG_ERR, "JSON decode failed(%d): %s", err.line, err.text);
+		goto out;
+	}
+
+	res_val = json_object_get(val, "result");
+	err_val = json_object_get(val, "error");
+
+	if (!res_val || json_is_null(res_val) ||
+	    (err_val && !json_is_null(err_val))) {
+		{
+			free(s);
+			if (err_val)
+				s = json_dumps(err_val, JSON_INDENT(3));
+			else
+				s = strdup("(unknown reason)");
+			printf("Invalid share, reason: %s\n", s);
+			totalRejectedShareCount++;
+		}
+		goto out;
+	}
+out:
+	free(s);
+}
+
+void stratumAuthorizeResponse( xptClient_t* xptClient, char *sret )
+{
+	stratumState = STRATUM_STATE_INIT_DONE;
+	return;
+}
+
+
+uint32 getCompact( uint32 nCompact)
+{
+	uint32 p;
+        unsigned int nSize = nCompact >> 24;
+        //bool fNegative     =(nCompact & 0x00800000) != 0;
+        unsigned int nWord = nCompact & 0x007fffff;
+        if (nSize <= 3)
+        {
+            nWord >>= 8*(3-nSize);
+            p = nWord;
+        }
+        else
+        {
+            p = nWord;
+            p <<= 8*(nSize-3); // warning: this has problems if difficulty (uncompacted) ever goes past the 2^32 boundary
+        }
+        return p;
+}
+
+
+bool stratum_notify(xptClient_t *sctx, json_t *params)
+{
+	const char *job_id, *prevhash, *coinb1, *coinb2, *version, *nbits, *ntime;
+	size_t coinb1_size, coinb2_size;
+	bool clean;
+	int merkle_count, i;
+	json_t *merkle_arr;
+	bool ret = false;
+
+	job_id = json_string_value(json_array_get(params, 0));
+	prevhash = json_string_value(json_array_get(params, 1));
+	coinb1 = json_string_value(json_array_get(params, 2));
+	coinb2 = json_string_value(json_array_get(params, 3));
+	merkle_arr = json_array_get(params, 4);
+	if (!merkle_arr || !json_is_array(merkle_arr))
+		goto out;
+	merkle_count = json_array_size(merkle_arr);
+	version = json_string_value(json_array_get(params, 5));
+	nbits = json_string_value(json_array_get(params, 6));
+	ntime = json_string_value(json_array_get(params, 7));
+	clean = json_is_true(json_array_get(params, 8));
+
+	if (!job_id || !prevhash || !coinb1 || !coinb2 || !version || !nbits || !ntime ||
+	    strlen(prevhash) != 64 || strlen(version) != 8 ||
+	    strlen(nbits) != 8 || strlen(ntime) != 8) {
+		printf("Stratum notify: invalid parameters");
+		goto out;
+	}
+
+	for (i = 0; i < merkle_count; i++) {
+		const char *s = json_string_value(json_array_get(merkle_arr, i));
+		if (!s || strlen(s) != 64) {
+			printf("Stratum notify: invalid Merkle branch");
+			goto out;
+		}
+		hex2bin(sctx->blockWorkInfo.txHashes + i*32, s, 32);
+	}
+
+	coinb1_size = strlen(coinb1) / 2;
+	coinb2_size = strlen(coinb2) / 2;
+	hex2bin(sctx->blockWorkInfo.coinBase1, coinb1, coinb1_size);
+
+	if (strcmp(sctx->blockWorkInfo.job_id, job_id))
+		memset(sctx->blockWorkInfo.extraNonce2, 0, sctx->blockWorkInfo.extraNonce2Len);
+	hex2bin(sctx->blockWorkInfo.coinBase2, coinb2, coinb2_size);
+
+	sctx->blockWorkInfo.coinBase1Size = coinb1_size;
+	sctx->blockWorkInfo.coinBase2Size = coinb2_size;
+
+	strncpy( sctx->blockWorkInfo.job_id, job_id, STRATUM_JOB_ID_MAX_LEN);
+	hex2bin(sctx->blockWorkInfo.prevBlockHash, prevhash, 32);
+	for (i = 0; i < 8; i++)
+		*(((uint32 *)sctx->blockWorkInfo.prevBlockHash) + i) = be32dec(((uint32 *)sctx->blockWorkInfo.prevBlockHash) + i);
+
+	sctx->blockWorkInfo.txHashCount = merkle_count;
+
+	hex2bin((unsigned char *)&sctx->blockWorkInfo.version, version, 4);
+	sctx->blockWorkInfo.version = swab32(sctx->blockWorkInfo.version);
+	hex2bin((unsigned char *)&sctx->blockWorkInfo.nBits, nbits, 4);
+	sctx->blockWorkInfo.nBits = swab32(sctx->blockWorkInfo.nBits);
+	sctx->blockWorkInfo.targetCompact = getCompact( sctx->blockWorkInfo.nBits );
+	
+
+	unsigned char ntimeAux[4];
+	hex2bin(ntimeAux, ntime, 4);
+	sctx->blockWorkInfo.nTime = be32dec(ntimeAux);
+
+	sctx->clientState = XPT_CLIENT_STATE_LOGGED_IN;
+	sctx->algorithm = ALGORITHM_RIECOIN;
+
+	sctx->blockWorkInfo.timeWork = time(NULL);
+	sctx->blockWorkInfo.timeBias = sctx->blockWorkInfo.nTime - (uint32)time(NULL);
+	if( clean || sctx->blockWorkInfo.height == 0 )
+		sctx->blockWorkInfo.height++;
+	sctx->hasWorkData = true;
+	ret = true;
+
+out:
+	return ret;
+}
+
+
+bool stratum_handle_method(xptClient_t *sctx, const char *s)
+{
+	json_t *val, *id, *params;
+	json_error_t err;
+	const char *method;
+	bool ret = false;
+
+	val = JSON_LOADS(s, &err);
+	if (!val) {
+		//applog(LOG_ERR, "JSON decode failed(%d): %s", err.line, err.text);
+		goto out;
+	}
+
+	method = json_string_value(json_object_get(val, "method"));
+	if (!method)
+	{
+		if( stratumState == STRATUM_STATE_SHARE_SENT )
+		{
+			stratumSubmitShareResponse( sctx, s );
+			stratumState = STRATUM_STATE_INIT_DONE;
+		}
+		goto out;
+	}
+	id = json_object_get(val, "id");
+	params = json_object_get(val, "params");
+
+	printf("received: %s\n", method );
+
+	if (!strcasecmp(method, "mining.notify")) {
+		ret = stratum_notify(sctx, params);
+		goto out;
+	}
+	if (!strcasecmp(method, "mining.set_difficulty")) {
+//		ret = stratum_set_difficulty(sctx, params);
+		goto out;
+	}
+	if (!strcasecmp(method, "client.reconnect")) {
+//		ret = stratum_reconnect(sctx, params);
+		goto out;
+	}
+	if (!strcasecmp(method, "client.get_version")) {
+//		ret = stratum_get_version(sctx, id);
+		goto out;
+	}
+	if (!strcasecmp(method, "client.show_message")) {
+//		ret = stratum_show_message(sctx, id, params);
+		goto out;
+	}
+
+out:
+	if (val)
+		json_decref(val);
+
+	return ret;
+}
+
+void stratumProcess( xptClient_t* xptClient, char *sret )
+{
+	// printf("incoming: %s\n", sret);
+	if( stratumState == STRATUM_STATE_SUBSCRIBE_SENT )
+	{
+		stratumSubscribeResponse( xptClient, sret );
+	} else
+	if( stratumState == STRATUM_STATE_AUTHORIZE_SENT )
+	{
+		stratumAuthorizeResponse( xptClient, sret );
+	}
+	else
+	{
+		stratum_handle_method( xptClient, sret );
+	}
+}
+
 bool xptClient_process(xptClient_t* xptClient)
 {
 	if( xptClient == NULL )
@@ -489,6 +1013,60 @@ bool xptClient_process(xptClient_t* xptClient)
 		xptClient->list_shareSubmitQueue->objectCount = 0;
 	}
 	LeaveCriticalSection(&xptClient->cs_shareSubmit);
+
+	if( commandlineInput.protocol == PROTOCOL_STRATUM )
+	{
+		ssize_t len, buflen;
+		char *tok, *sret = NULL;
+
+		char s[RBUFSIZE];
+		ssize_t n;
+
+		memset(s, 0, RBUFSIZE);
+		n = recv(xptClient->clientSocket, s, RECVSIZE, 0);
+		if( n <= 0 )
+		{
+		#ifdef _WIN32
+			// receive error, is it a real error or just because of non blocking sockets?
+			if( WSAGetLastError() != WSAEWOULDBLOCK || n == 0)
+			{
+				xptClient->disconnected = true;
+				return false;
+			}
+		#else
+    			if(errno != EAGAIN || n == 0)
+    			{
+				xptClient->disconnected = true;
+				return false;
+    			}
+		#endif
+			return true;
+		}
+		stratum_buffer_append(xptClient, s);
+
+		if (strstr((char *)xptClient->recvBuffer->buffer, "\n"))
+		{
+			buflen = strlen(xptClient->recvBuffer->buffer);
+			tok = strtok(xptClient->recvBuffer->buffer, "\n");
+			if (!tok) {
+				printf("stratum_recv_line failed to parse a newline-terminated string\n");
+				return false;
+			}
+			sret = strdup(tok);
+			len = strlen(sret);
+
+			if (buflen > len + 1)
+				memmove(xptClient->recvBuffer->buffer, xptClient->recvBuffer->buffer + len + 1, buflen - len + 1);
+			else
+				xptClient->recvBuffer->buffer[0] = '\0';
+				
+			stratumProcess(xptClient, sret);
+			xptClient->recvBuffer->buffer[0] = '\0';
+		}
+
+		return true;
+	}
+
 	// check if we need to send ping
 	uint32 currentTime = (uint32)time(NULL);
 	if( xptClient->time_sendPing != 0 && currentTime >= xptClient->time_sendPing )
@@ -522,6 +1100,7 @@ bool xptClient_process(xptClient_t* xptClient)
 		return true;
 	}
 	xptClient->recvIndex += r;
+	
 	// header just received?
 	if( xptClient->recvIndex == packetFullSize && packetFullSize == 4 )
 	{

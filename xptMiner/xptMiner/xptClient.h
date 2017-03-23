@@ -1,3 +1,6 @@
+#ifndef __XPTCLIENT_H__
+#define __XPTCLIENT_H__
+
 #define XPT_DEVELOPER_FEE_MAX_ENTRIES	(8)
 
 typedef struct  
@@ -25,6 +28,7 @@ typedef struct
 	uint8 merkleRootOriginal[32];
 	uint32 userExtraNonceLength;
 	uint8 userExtraNonceData[16];
+	uint8 job_id[STRATUM_JOB_ID_MAX_LEN+1];
 }xptShareToSubmit_t;
 
 typedef struct  
@@ -94,3 +98,5 @@ void xptClient_getDifficultyTargetFromCompact(uint32 nCompact, uint32* hashTarge
 
 // miner version string (needs to be defined somewhere in the project, max 45 characters)
 extern char* minerVersionString;
+
+#endif // __XPTCLIENT_H__

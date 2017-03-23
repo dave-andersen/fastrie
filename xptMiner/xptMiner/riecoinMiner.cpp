@@ -2,6 +2,7 @@
 #include <chrono>
 #include <assert.h>
 #include "tsqueue.hpp"
+#include <math.h>
 
 #define zeroesBeforeHashInPrime	8
 

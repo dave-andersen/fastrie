@@ -1,5 +1,8 @@
 xptMiner changes:
 
+c16 (based upon 2014-08-08 by Gatra)
+	- added support for stratum protocol (-m command line option)
+
 b16 (2014-09-01)
 	- Fixed critical bug that was breaking b15 on windows.
 	Bug does not seem to manifest on Linux, but I'm pushing
