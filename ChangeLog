@@ -2,6 +2,9 @@ xptMiner changes:
 
 c17 - work in progress:
 	- Faster, cleaner, stronger, better.  Welcome to 2017.
+	- Modest speedup to small-primes sieve init;
+	- Removing a bunch of gunk files leftover from the general
+	  xptMiner.
 
 c16 (based upon 2014-08-08 by Gatra)
 	- added support for stratum protocol (-m command line option)

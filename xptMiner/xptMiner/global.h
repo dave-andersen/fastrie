@@ -158,8 +158,8 @@ typedef struct
 	uint8	job_id[STRATUM_JOB_ID_MAX_LEN+1]; // used to identify work in stratum
 }minerRiecoinBlock_t;
 
-#include"algorithm.h"
-
+void riecoin_init(uint64_t sieveMax, int numThreads);
+void riecoin_process(minerRiecoinBlock_t* block);
 
 void xptMiner_submitShare(minerRiecoinBlock_t* block, uint8* nOffset);
 
