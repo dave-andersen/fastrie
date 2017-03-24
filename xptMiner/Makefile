@@ -61,7 +61,6 @@ OBJS = \
 	xptMiner/xptClient.o \
 	xptMiner/xptClientPacketHandler.o \
 	xptMiner/xptPacketbuffer.o \
-	xptMiner/xptServer.o \
 	xptMiner/xptServerPacketHandler.o \
 	xptMiner/transaction.o \
 	xptMiner/riecoinMiner.o
