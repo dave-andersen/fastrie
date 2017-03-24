@@ -54,54 +54,6 @@ typedef struct
 	uint8 job_id[STRATUM_JOB_ID_MAX_LEN+1];
 }xptBlockWorkInfo_t;
 
-typedef struct _xptServer_t 
-{
-#ifdef _WIN32
-	SOCKET acceptSocket;
-#else
-	int acceptSocket;
-#endif
-	simpleList_t* list_connections;
-	xptPacketbuffer_t* sendBuffer; // shared buffer for sending data
-	// last known block height (for new block detection)
-	uint32 coinTypeBlockHeight[32];
-	// callbacks
-	bool (*xptCallback_generateWork)(xptServer_t* xptServer, uint32 numOfWorkEntries, uint32 coinTypeIndex, xptBlockWorkInfo_t* xptBlockWorkInfo, xptWorkData_t* xptWorkData);
-	void (*xptCallback_getBlockHeight)(xptServer_t* xptServer, uint32* coinTypeNum, uint32* blockHeightPerCoinType);
-}xptServer_t;
-
-typedef struct  
-{
-	xptServer_t* xptServer;
-#ifdef _WIN32
-	SOCKET clientSocket;
-#else
-	int clientSocket;
-#endif
-	bool disconnected;
-	// recv buffer
-	xptPacketbuffer_t* packetbuffer;
-	uint32 recvIndex;
-	uint32 recvSize;
-	// recv header info
-	uint32 opcode;
-	// authentication info
-	uint8 clientState;
-	char workerName[128];
-	char workerPass[128];
-	uint32 userId;
-	uint32 coinTypeIndex;
-	uint32 payloadNum;
-
-	//uint32 size;
-	//// http auth
-	//bool useBasicHTTPAuth;
-	//char httpAuthUsername[64];
-	//char httpAuthPassword[64];
-	//// auto-diconnect
-	//uint32 connectionOpenedTimer;
-}xptServerClient_t;
-
 // client states
 #define XPT_CLIENT_STATE_NEW		(0)
 #define XPT_CLIENT_STATE_LOGGED_IN	(1)
@@ -139,12 +91,6 @@ typedef struct
 // xpt general
 xptServer_t* xptServer_create(uint16 port);
 void xptServer_startProcessing(xptServer_t* xptServer);
-
-// private packet handlers
-bool xptServer_processPacket_authRequest(xptServer_t* xptServer, xptServerClient_t* xptServerClient);
-
-// public packet methods
-bool xptServer_sendBlockData(xptServer_t* xptServer, xptServerClient_t* xptServerClient);
 
 // packetbuffer
 xptPacketbuffer_t* xptPacketbuffer_create(uint32 initialSize);
