@@ -1,5 +1,8 @@
 xptMiner changes:
 
+c17 - work in progress:
+	- Faster, cleaner, stronger, better.  Welcome to 2017.
+
 c16 (based upon 2014-08-08 by Gatra)
 	- added support for stratum protocol (-m command line option)
 

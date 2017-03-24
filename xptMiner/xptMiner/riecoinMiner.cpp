@@ -705,13 +705,22 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	      uint32_t pno = i+startingPrimeIndex;
 	      silly_sort_indexes(offsets[pno]);
 	      uint32_t p = riecoin_primeTestTable[pno];
+	      while (offsets[pno][5] < riecoin_sieveSize) {
+#define MARK(x) sieve[offsets[pno][x]>>3] |= (1<<(offsets[pno][x]&7)); offsets[pno][x] += p;
+		      MARK(0);
+		      MARK(1);
+		      MARK(2);
+		      MARK(3);
+		      MARK(4);
+		      MARK(5);
+	      }
 	      for (uint32 f = 0; f < 6; f++) {
-		while (offsets[pno][f] < riecoin_sieveSize) {
-		  assert(offsets[pno][f] < riecoin_sieveSize);
-		  sieve[offsets[pno][f]>>3] |= (1<<((offsets[pno][f]&7)));
-		  offsets[pno][f] += p;
+		auto opnof = offsets[pno][f];
+		if (opnof < riecoin_sieveSize) {
+		  sieve[opnof>>3] |= (1<<(opnof&7));
+		  opnof += p;
 		}
-		offsets[pno][f] -= riecoin_sieveSize;
+		offsets[pno][f] = (opnof - riecoin_sieveSize);
 	      }
 	    }
 
@@ -730,13 +739,12 @@ void riecoin_process(minerRiecoinBlock_t* block)
 	      exit(-1);
 	    }
 	    uint64_t *s64 = (uint64_t *)sieve;
-	    
+
 	    for (unsigned int i = 0; i < riecoin_sieveWords; i++) {
 	      for (int j = 0; j < N_SIEVE_WORKERS; j++) {
 		s64[i] |= ((uint64_t *)(riecoin_sieves[j]))[i];
 	      }
 	    }
-
 	    DPRINTF("master - done merging sieves\n");
 		  
 	    //process_sieve(sieve, n_dense, (n_dense+n_sparse));
