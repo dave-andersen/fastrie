@@ -7,7 +7,7 @@
 #define MAX_TRANSACTIONS	(4096)
 
 // miner version string (for pool statistic)
-char* minerVersionString = "xptMiner 1.7dga-c16";
+char* minerVersionString = "xptMiner 1.7dga-c17";
 
 minerSettings_t minerSettings = {0};
 
@@ -114,31 +114,25 @@ void *xptMiner_minerThread(void *arg)
 		EnterCriticalSection(&workDataSource.cs_work);
 		if( workDataSource.height > 0 )
 		{
-			switch( workDataSource.algorithm )
-			{
-			case ALGORITHM_RIECOIN:
-				// get maxcoin work data
-				memset(&minerRiecoinBlock, 0x00, sizeof(minerRiecoinBlock));
-				minerRiecoinBlock.version = workDataSource.version;
-				minerRiecoinBlock.nTime = (uint64)time(NULL) + (uint64)(sint64)(sint32)workDataSource.timeBias; // Riecoin uses 64bit timestamp
-				minerRiecoinBlock.nBits = workDataSource.nBits;
-				minerRiecoinBlock.targetCompact = workDataSource.targetCompact;
-				minerRiecoinBlock.shareTargetCompact = workDataSource.shareTargetCompact;
+			memset(&minerRiecoinBlock, 0x00, sizeof(minerRiecoinBlock));
+			minerRiecoinBlock.version = workDataSource.version;
+			minerRiecoinBlock.nTime = (uint64)time(NULL) + (uint64)(sint64)(sint32)workDataSource.timeBias; // Riecoin uses 64bit timestamp
+			minerRiecoinBlock.nBits = workDataSource.nBits;
+			minerRiecoinBlock.targetCompact = workDataSource.targetCompact;
+			minerRiecoinBlock.shareTargetCompact = workDataSource.shareTargetCompact;
 
-				minerRiecoinBlock.height = workDataSource.height;
-				memcpy(minerRiecoinBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
-				memcpy(minerRiecoinBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
-				minerRiecoinBlock.uniqueMerkleSeed = ++uniqueMerkleSeedGenerator;
-				memcpy(minerRiecoinBlock.job_id, workDataSource.job_id, sizeof(minerRiecoinBlock.job_id) );
-				// generate merkle root transaction
-				if( commandlineInput.protocol == PROTOCOL_STRATUM )
-					bitclient_generateTxHash(workDataSource.extraNonce1Len, workDataSource.extraNonce1, sizeof(uint32), (uint8*)&minerRiecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
-				else
-					bitclient_generateTxHash(0, NULL, sizeof(uint32), (uint8*)&minerRiecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
-				bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerRiecoinBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
-				hasValidWork = true;
-				break;
-			}
+			minerRiecoinBlock.height = workDataSource.height;
+			memcpy(minerRiecoinBlock.merkleRootOriginal, workDataSource.merkleRootOriginal, 32);
+			memcpy(minerRiecoinBlock.prevBlockHash, workDataSource.prevBlockHash, 32);
+			minerRiecoinBlock.uniqueMerkleSeed = ++uniqueMerkleSeedGenerator;
+			memcpy(minerRiecoinBlock.job_id, workDataSource.job_id, sizeof(minerRiecoinBlock.job_id) );
+			// generate merkle root transaction
+			if( commandlineInput.protocol == PROTOCOL_STRATUM )
+				bitclient_generateTxHash(workDataSource.extraNonce1Len, workDataSource.extraNonce1, sizeof(uint32), (uint8*)&minerRiecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
+			else
+				bitclient_generateTxHash(0, NULL, sizeof(uint32), (uint8*)&minerRiecoinBlock.uniqueMerkleSeed, workDataSource.coinBase1Size, workDataSource.coinBase1, workDataSource.coinBase2Size, workDataSource.coinBase2, workDataSource.txHash, TX_MODE_DOUBLE_SHA256);
+			bitclient_calculateMerkleRoot(workDataSource.txHash, workDataSource.txHashCount+1, minerRiecoinBlock.merkleRoot, TX_MODE_DOUBLE_SHA256);
+			hasValidWork = true;
 		}
 		LeaveCriticalSection(&workDataSource.cs_work);
 		if( hasValidWork == false )
@@ -148,7 +142,6 @@ void *xptMiner_minerThread(void *arg)
 		}
 		// valid work data present, start processing workload
 
-		if( workDataSource.algorithm == ALGORITHM_RIECOIN )
 		{
 #define DEBUG_TIMING 0
 #if DEBUG_TIMING
@@ -164,11 +157,6 @@ void *xptMiner_minerThread(void *arg)
 		  d -= ((double)tv_start.tv_usec)/1000000.0;
 		  printf("riecoin loop %.2f seconds\n", d);
 #endif
-		}
-		else
-		{
-			printf("xptMiner_minerThread(): Unknown algorithm\n");
-			Sleep(5000); // dont spam the console
 		}
 	}
 	return 0;
