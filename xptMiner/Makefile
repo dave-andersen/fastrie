@@ -37,8 +37,8 @@ ifeq ($(OSVERSION),FreeBSD)
 endif
 
 # You might need to edit these paths too
-LIBPATHS = -L/usr/local/lib -L/usr/lib -L/DBA/openssl/1.0.1f/lib/
-INCLUDEPATHS = -I/usr/local/include -I/usr/include -IxptMiner/includes/ -IxptMiner/OpenCL
+LIBPATHS = -L/usr/local/lib -L/usr/local/ssl/lib -L/usr/lib64 -L/usr/lib
+INCLUDEPATHS = -I/usr/local/include -I/usr/include -IxptMiner/includes -IxptMiner/OpenCL
 
 ifeq ($(OSVERSION),Darwin)
 	EXTENSION = -mac
