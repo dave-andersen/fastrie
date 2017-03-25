@@ -40,15 +40,20 @@ sudo apt-get -y install \
 ## Building
 
 ```sh
+# gmp library
 wget http://mirrors.kernel.org/gnu/gmp/gmp-5.1.3.tar.bz2
 tar xjvf gmp-5.1.3.tar.bz2
 cd gmp-5.1.3
 ./configure --enable-cxx
 make -j4 && sudo make install
-cd
+cd ..
+
+# xptMiner
 git clone https://github.com/clintar/xptMiner.git
 cd xptMiner
 LD_LIBRARY_PATH=/usr/local/lib make -j4
+
+# Run
 ./xptminer -u username.riecoinworkername -p workerpassword
 ```
 
