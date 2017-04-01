@@ -42,8 +42,8 @@ CXXFLAGS += $(BUILD_ARCH)
 
 
 # You might need to edit these paths too
-LIBPATHS =  -L/usr/local/lib -L/usr/local/ssl/lib
-INCLUDEPATHS = -IxptMiner/includes/ -IxptMiner/OpenCL -I/usr/local/include
+LIBPATHS = -L/usr/local/lib -L/usr/local/ssl/lib -L/usr/lib64 -L/usr/lib
+INCLUDEPATHS = -IxptMiner/includes -IxptMiner/OpenCL -I/usr/local/include
 
 ifeq ($(OSVERSION),Darwin)
 	EXTENSION = -mac
@@ -72,8 +72,6 @@ OBJS = \
 	xptMiner/xptClient.o \
 	xptMiner/xptClientPacketHandler.o \
 	xptMiner/xptPacketbuffer.o \
-	xptMiner/xptServer.o \
-	xptMiner/xptServerPacketHandler.o \
 	xptMiner/transaction.o \
 	xptMiner/riecoinMiner.o
 
