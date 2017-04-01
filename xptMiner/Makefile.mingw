@@ -15,7 +15,7 @@ CFLAGS += -O2 -fomit-frame-pointer $(EXTRA_CFLAGS) -fpermissive
 
 
 OSVERSION := $(shell uname -s)
-LIBS = -lcrypto -lssl -pthread  -ldl 
+LIBS = -lcrypto -lssl -lpthread  -ldl 
 LIBS = -lcrypto -lssl -lwsock32 -lws2_32
 ifeq ($(INT_LIB),mpir)
        MPIR_DEF=-DUSE_MPIR
