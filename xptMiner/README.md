@@ -14,7 +14,8 @@ version. Stratum support was added by Gatra.
 ### CentOS/RHEL
 ```sh
 sudo yum groupinstall 'Development Tools' && sudo yum install \
-  openssl openssl-devel openssh-clients gmp gmp-devel gmp-static git wget
+  openssl openssl-devel openssh-clients gmp gmp-devel gmp-static git wget \
+  jansson-devel
 ```
 
 You will also need to install primesieve. There is no official rpm package in
