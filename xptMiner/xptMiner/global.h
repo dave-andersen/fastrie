@@ -19,6 +19,7 @@
 #else
 
 #ifndef USE_MPIR
+#include <cstddef>
 #include <gmpxx.h>
 #include <gmp.h>
 #else
