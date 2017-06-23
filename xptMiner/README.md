@@ -15,6 +15,14 @@ version. Stratum support was added by Gatra.
 ```sh
 sudo yum groupinstall 'Development Tools' && sudo yum install \
   openssl openssl-devel openssh-clients gmp gmp-devel gmp-static git wget
+
+# gmp library
+wget http://mirrors.kernel.org/gnu/gmp/gmp-5.1.3.tar.bz2
+tar xjvf gmp-5.1.3.tar.bz2
+cd gmp-5.1.3
+./configure --enable-cxx
+make -j4 && sudo make install
+cd ..
 ```
 
 You will also need to install primesieve. There is no official rpm package in
@@ -34,42 +42,20 @@ sudo yum install \
 ```sh
 sudo apt-get -y install \
   build-essential m4 openssl libssl-dev git libjson0 libjson0-dev \
-  libcurl4-openssl-dev wget primesieve libjansson-dev
+  libcurl4-openssl-dev wget primesieve libjansson-dev libgmp-dev
 ```
 
 ## Building
 
-```sh
-# gmp library
-wget http://mirrors.kernel.org/gnu/gmp/gmp-5.1.3.tar.bz2
-tar xjvf gmp-5.1.3.tar.bz2
-cd gmp-5.1.3
-./configure --enable-cxx
-make -j4 && sudo make install
-cd ..
-
+```
 # xptMiner
-git clone https://github.com/clintar/xptMiner.git
+git clone -b stratum https://github.com/dave-andersen/fastrie
 cd xptMiner
-LD_LIBRARY_PATH=/usr/local/lib make -j4
+make -j4
 
 # Run
-./xptminer -u username.riecoinworkername -p workerpassword
+./xptminer -m -u username.riecoinworkername -p workerpassword -o <stratumURL>
 ```
 
-If you get illegal instruction try this:
-
-```sh
-make clean
-LD_LIBRARY_PATH=/usr/local/lib make -j4 -f Makefile.mtune
-```
-
-And run it again. If it still gets a segfault, let me know please and try this:
-
-```sh
-make clean
-LD_LIBRARY_PATH=/usr/local/lib make -j4 -f Makefile.nomarch
-```
-
-This has a default 2% donation that can be set using the -d option (-d 2.5
-would be 2.5% donation).
+The stratum branch has no donation.  If you're enjoying the miner and 
+making money from it, please send a donation to Gatra.
