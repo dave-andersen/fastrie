@@ -42,7 +42,7 @@ sudo yum install \
 ```sh
 sudo apt-get -y install \
   build-essential m4 openssl libssl-dev git libjson0 libjson0-dev \
-  libcurl4-openssl-dev wget primesieve libjansson-dev libgmp-dev
+  libcurl4-openssl-dev wget primesieve libjansson-dev libprimesieve-dev libgmp-dev
 ```
 
 ## Building
