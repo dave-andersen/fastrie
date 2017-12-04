@@ -195,7 +195,7 @@ typedef struct
 	// mode option
 	uint32 mode;
 	float donationPercent;
-        uint32 sieveMax;
+        uint64 sieveMax;
         int protocol;
 } commandlineInput_t;
 
