@@ -393,7 +393,7 @@ void xptMiner_parseCommandline(int argc, char **argv)
 {
 	sint32 cIdx = 1;
 	commandlineInput.donationPercent = 2.0f;
-	commandlineInput.sieveMax = 900000000;
+	commandlineInput.sieveMax = 900000000ULL;
 	commandlineInput.protocol = PROTOCOL_XPT;
 
 	while( cIdx < argc )
@@ -410,7 +410,6 @@ void xptMiner_parseCommandline(int argc, char **argv)
 		    printf("Bad sieve size:  Must be between 100000 and 4.1 billion\n");
 		    exit(0);
 		  }
-		  //commandlineInput.sieveMax = atoi(argv[cIdx]);
 		  cIdx++;
 		}
 		else if( memcmp(argument, "-o", 3)==0 || memcmp(argument, "-O", 3)==0 )

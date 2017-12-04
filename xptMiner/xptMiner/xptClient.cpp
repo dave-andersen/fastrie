@@ -59,6 +59,10 @@ int xptClient_openConnection(char *IP, int Port)
   addr.sin_port=htons(Port);
   addr.sin_addr.s_addr = inet_addr(IP);
   int result = connect(s, (sockaddr*)&addr, sizeof(sockaddr_in));
+  if (result) {
+    perror("unablhe to connect");
+    return -1;
+  }
 #endif
 
 	return s;
@@ -116,15 +120,14 @@ static inline void le32enc(void *pp, uint32_t x)
 
 char *bin2hex(const unsigned char *p, size_t len)
 {
-	int i;
-	char *s = malloc((len * 2) + 1);
+	char *s = (char *)malloc((len * 2) + 1);
 	if (!s)
 	{
 		printf("malloc failed in bin2hex\n");
 		return NULL;
 	}
 
-	for (i = 0; i < len; i++)
+	for (size_t i = 0; i < len; i++)
 	{
 		sprintf(s + (i * 2), "%02x", (unsigned int) p[i]);
 	}
@@ -546,21 +549,14 @@ static const char *get_stratum_session_id(json_t *val)
 
 void stratumClient_sendSubscribe(xptClient_t* sctx)
 {
-	char *s, *sret = NULL;
-	const char *sid, *xnonce1;
-	json_t *val = NULL, *res_val, *err_val;
-	json_error_t err;
-	bool ret = false, retry = false;
-
-	s = malloc(128 + (sctx->blockWorkInfo.session_id ? strlen(sctx->blockWorkInfo.session_id) : 0));
-	if (retry)
-		sprintf(s, "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": []}\n");
-	else if (sctx->blockWorkInfo.session_id)
+	char *s = malloc(128 + (sctx->blockWorkInfo.session_id ? strlen(sctx->blockWorkInfo.session_id) : 0));
+	if (sctx->blockWorkInfo.session_id)
 		sprintf(s, "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\"" USER_AGENT "\", \"%s\"]}\n", sctx->blockWorkInfo.session_id);
 	else
 		sprintf(s, "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\"" USER_AGENT "\"]}\n");
 
 	send(sctx->clientSocket, (const char*)(s), strlen(s), 0);
+	free(s);
 	
 	stratumState = STRATUM_STATE_SUBSCRIBE_SENT;
 
@@ -568,17 +564,12 @@ void stratumClient_sendSubscribe(xptClient_t* sctx)
 
 void stratumSendAuthorize(xptClient_t* sctx)
 {
-	char *s, *sret = NULL;
-	const char *sid, *xnonce1;
-	json_t *val = NULL, *res_val, *err_val;
-	json_error_t err;
-	bool ret = false, retry = false;
-
-	s = malloc(80 + strlen(sctx->username) + strlen(sctx->password));
+	char *s = (char *)malloc(80 + strlen(sctx->username) + strlen(sctx->password));
 	sprintf(s, "{\"id\": 2, \"method\": \"mining.authorize\", \"params\": [\"%s\", \"%s\"]}\n",
 	        sctx->username, sctx->password);
 
 	send(sctx->clientSocket, (const char*)(s), strlen(s), 0);
+	free(s);
 	
 	stratumState = STRATUM_STATE_AUTHORIZE_SENT;
 }
@@ -720,7 +711,7 @@ void stratumSubscribeResponse( xptClient_t* xptClient, char *sret )
 //sret = "{\"error\": null, \"id\": 1, \"result\": [[\"mining.notify\", \"ae6812eb4cd7735a302a8a9dd95cf71f\"], \"f800000d\", 4]}";
 	xptClient->algorithm = ALGORITHM_RIECOIN;
 
-	char *s = malloc(128);
+	char *s = (char *)malloc(128);
 	json_t *val = NULL, *res_val, *err_val;
 	json_error_t err;
 	const char *sid, *xnonce1;
@@ -756,9 +747,6 @@ void stratumSubscribeResponse( xptClient_t* xptClient, char *sret )
 
 	free(xptClient->blockWorkInfo.session_id);
 
-	uint8	extraNonce1[1024];
-	uint16	extraNonce1Len;
-	
 	xptClient->blockWorkInfo.session_id = sid ? strdup(sid) : NULL;
 	xptClient->blockWorkInfo.extraNonce1Len = strlen(xnonce1) / 2;
 	hex2bin(xptClient->blockWorkInfo.extraNonce1, xnonce1, xptClient->blockWorkInfo.extraNonce1Len);
@@ -780,9 +768,9 @@ out:
 
 
 
-void stratumSubmitShareResponse( xptClient_t* xptClient, const char *sret )
+void stratumSubmitShareResponse( xptClient_t* xptClient, char *sret )
 {
-	char *s = malloc(128);
+	char *s = (char *)malloc(128);
 	json_t *val = NULL, *res_val, *err_val;
 	json_error_t err;
 	
