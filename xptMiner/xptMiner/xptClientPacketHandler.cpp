@@ -112,8 +112,8 @@ bool xptClient_processPacket_shareAck(xptClient_t* xptClient)
 		return false;
 	if( shareErrorCode == 0 )
 	{
-		time_t now = time(0);
-		char* dt = ctime(&now);
+		//time_t now = time(0);
+		//char* dt = ctime(&now);
 		//printf("Share accepted by server\n");
 		//printf(" [ %d / %d val: %.6f] %s", valid_shares, total_shares, shareValue, dt);
 		//primeStats.fShareValue += shareValue;

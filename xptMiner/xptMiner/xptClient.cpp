@@ -292,7 +292,6 @@ bool xptClient_decodeBase58(char* base58Input, sint32 inputLength, uint8* dataOu
 		return false;
 	if( inputLength > 200 )
 		return false;
-	sint32 writeIndex = 0;
 	uint32 baseArray[32];
 	uint32 baseTrack[32];
 	memset(baseArray, 0x00, sizeof(baseArray));

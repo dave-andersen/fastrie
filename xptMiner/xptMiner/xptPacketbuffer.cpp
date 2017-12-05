@@ -274,7 +274,7 @@ void xptPacketbuffer_finalizeWritePacket(xptPacketbuffer_t* pb)
 {
 	uint32 opcode = (*(uint32*)pb->buffer)&0x000000FF;
 	uint32 dataSize = pb->parserIndex - 4;
-	uint32 header = (opcode)&0x000000FF | ((dataSize<<8)&0xFFFFFF00);
+	uint32 header = ((opcode)&0x000000FF) | ((dataSize<<8)&0xFFFFFF00);
 	*(uint32*)pb->buffer = header;
 }
 
