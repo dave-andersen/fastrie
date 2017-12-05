@@ -97,6 +97,6 @@ bool xptClient_processPacket_ping(xptClient_t* xptClient);
 void xptClient_getDifficultyTargetFromCompact(uint32 nCompact, uint32* hashTarget);
 
 // miner version string (needs to be defined somewhere in the project, max 45 characters)
-extern char* minerVersionString;
+extern const char* minerVersionString;
 
 #endif // __XPTCLIENT_H__

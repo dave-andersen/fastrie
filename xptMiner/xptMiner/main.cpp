@@ -7,9 +7,9 @@
 #define MAX_TRANSACTIONS	(4096)
 
 // miner version string (for pool statistic)
-char* minerVersionString = "xptMiner 1.7dga-c17";
+const char* minerVersionString = "xptMiner 1.7dga-c17";
 
-minerSettings_t minerSettings = {0};
+minerSettings_t minerSettings;
 
 xptClient_t* xptClient = NULL;
 CRITICAL_SECTION cs_xptClient;
@@ -100,7 +100,6 @@ int xptMiner_minerThread(int threadIndex)
 #else
 void *xptMiner_minerThread(void *arg)
 {
-	int threadIndex = (intptr_t)arg;
 #endif
 
 	// local work data
