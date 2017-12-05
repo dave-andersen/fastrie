@@ -66,7 +66,7 @@ void simpleList_add(simpleList_t* simpleList, void* object) // todo: Via define 
 // does not add the object if it is already in the list
 void simpleList_addUnique(simpleList_t* simpleList, void* object)
 {
-	for(sint32 i=0; i<simpleList->objectCount; i++)
+	for(uint32 i=0; i<simpleList->objectCount; i++)
 	{
 		if( simpleList->objects[i] == object )
 			return;
@@ -92,7 +92,7 @@ void simpleList_addUnique(simpleList_t* simpleList, void* object)
 // does not add the object if it is already in the list and returns true if it was added
 bool simpleList_addUniqueFeedback(simpleList_t* simpleList, void* object)
 {
-	for(sint32 i=0; i<simpleList->objectCount; i++)
+	for(uint32 i=0; i<simpleList->objectCount; i++)
 	{
 		if( simpleList->objects[i] == object )
 			return false;
@@ -119,7 +119,7 @@ bool simpleList_addUniqueFeedback(simpleList_t* simpleList, void* object)
 // Never call _remove while parsing through the list!
 bool simpleList_remove(simpleList_t* simpleList, void* object)
 {
-	for(sint32 i=0; i<simpleList->objectCount; i++)
+	for(uint32 i=0; i<simpleList->objectCount; i++)
 	{
 		if( simpleList->objects[i] == object )
 		{
@@ -486,8 +486,8 @@ uint32 streamEx_dynamicMemoryRange_getSeek(void *object)
 void streamEx_dynamicMemoryRange_setSeek(void *object, sint32 seek, bool relative)
 {
 	streamEx_dynamicMemoryRange_t* memoryRangeObj = (streamEx_dynamicMemoryRange_t*)object;
+	if (seek < 0) seek = 0;
 	memoryRangeObj->bufferPosition = seek;
-	if( memoryRangeObj->bufferPosition < 0 ) memoryRangeObj->bufferPosition = 0;
 	if( memoryRangeObj->bufferPosition > memoryRangeObj->bufferSize ) memoryRangeObj->bufferPosition = memoryRangeObj->bufferSize;
 }
 
@@ -690,7 +690,9 @@ void* streamEx_map(stream_t* stream, sint32* size)
 
 sint32 streamEx_readStringNT(stream_t* stream, char* str, uint32 strSize)
 {
-	for(sint32 i=0; i<strSize-1; i++)
+	if (strSize == 0) { return -1; }
+	
+	for(uint32 i=0; i<strSize-1; i++)
 	{
 		str[i] = stream_readS8(stream);
 		if( str[i] == '\0' )
