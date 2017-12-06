@@ -32,7 +32,7 @@ endif
 
 # You might need to edit these paths too
 LIBPATHS = -L/usr/local/lib -L/usr/lib -L/DBA/openssl/1.0.1f/lib/
-INCLUDEPATHS = -I/usr/local/include -I/usr/include -IxptMiner/includes/ -IxptMiner/OpenCL
+INCLUDEPATHS = -I/usr/local/include -I/usr/include -IxptMiner/includes/ 
 
 ifeq ($(OSVERSION),Darwin)
 	EXTENSION = -mac
@@ -67,17 +67,6 @@ OBJS = \
 	xptMiner/transaction.o \
 	xptMiner/riecoinMiner.o \
 	xptMiner/metiscoinMiner.o 
-
-ifeq ($(ENABLE_OPENCL),1)
-	OBJS += xptMiner/OpenCLObjects.o 
-        OBJS += xptMiner/openCL.o
-	OBJS += xptMiner/maxcoinMinerCL.o 
-	CXXFLAGS += -DUSE_OPENCL
-	LIBS += -lOpenCL
-else
-	OBJS += xptMiner/maxcoinMiner.o 
-
-endif
 
 all: xptminer$(EXTENSION)
 

@@ -92,16 +92,14 @@ typedef struct sockaddr SOCKADDR;
 #endif
 #define _ALIGNED_TYPE(t,x) typedef t _ALIGNED(x)
 
-#include<stdio.h>
-#include<time.h>
-#include<stdlib.h>
-#include<set>
+#include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
+#include <set>
 
 #include <iomanip>
 
-#include"jhlib.h" // slim version of jh library
-
-#include"openCL.h"
+#include "jhlib.h" // slim version of jh library
 
 // connection info for xpt
 typedef struct  
@@ -115,12 +113,12 @@ typedef struct
 
 #define STRATUM_JOB_ID_MAX_LEN 32
 
-#include"xptServer.h"
-#include"xptClient.h"
+#include "xptServer.h"
+#include "xptClient.h"
 
-#include"sha2.h"
+#include "sha2.h"
 
-#include"transaction.h"
+#include "transaction.h"
 
 // global settings for miner
 typedef struct  

@@ -43,7 +43,7 @@ CXXFLAGS += $(BUILD_ARCH)
 
 # You might need to edit these paths too
 LIBPATHS = -L/usr/local/lib -L/usr/local/ssl/lib -L/usr/lib64 -L/usr/lib
-INCLUDEPATHS = -IxptMiner/includes -IxptMiner/OpenCL -I/usr/local/include
+INCLUDEPATHS = -IxptMiner/includes -I/usr/local/include
 
 ifeq ($(OSVERSION),Darwin)
 	EXTENSION = -mac
@@ -58,7 +58,6 @@ else
 endif
 ifeq ($(OSVERSION),CYGWIN_NT-6.1)
 	EXTENSION = .exe
-#	LIBS += -lOpenCL
 	LIBPATHS += -L/cygdrive/c/Program\ Files\ \(x86\)/AMD\ APP\ SDK/2.9/lib/x86_64/
 	INCLUDEPATHS += -I/cygdrive/c/Program\ Files\ \(x86\)/AMD\ APP\ SDK/2.9/include
 endif
@@ -84,15 +83,6 @@ OBJS += \
         xptMiner/jansson/strbuffer.c \
         xptMiner/jansson/utf.c \
         xptMiner/jansson/value.c
-
-ifeq ($(ENABLE_OPENCL),1)
-	OBJS += xptMiner/OpenCLObjects.o 
-        OBJS += xptMiner/openCL.o
-	CXXFLAGS += -DUSE_OPENCL
-	LIBS += -lOpenCL
-else
-
-endif
 
 all: xptminer$(EXTENSION)
 
