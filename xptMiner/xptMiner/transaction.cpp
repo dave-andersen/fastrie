@@ -1,4 +1,4 @@
-#include"global.h"
+#include "global.h"
 
 void bitclient_addVarIntFromStream(stream_t* msgStream, uint64 varInt)
 {

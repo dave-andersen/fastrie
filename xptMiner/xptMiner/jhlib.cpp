@@ -63,80 +63,6 @@ void simpleList_add(simpleList_t* simpleList, void* object) // todo: Via define 
 	simpleList->objectCount++;
 }
 
-// does not add the object if it is already in the list
-void simpleList_addUnique(simpleList_t* simpleList, void* object)
-{
-	for(uint32 i=0; i<simpleList->objectCount; i++)
-	{
-		if( simpleList->objects[i] == object )
-			return;
-	}
-	// object not found, add item
-	if( simpleList->objectCount == simpleList->objectLimit )
-	{
-		simpleList->objectLimit += (simpleList->objectLimit/2+1)*simpleList->stepScaler;
-		if( simpleList->doNotFreeRawData )
-		{
-			void* oldObjectPtr = simpleList->objects;
-			simpleList->objects = (void**)malloc(sizeof(void*) * simpleList->objectLimit);
-			RtlCopyMemory(simpleList->objects, oldObjectPtr, sizeof(void*) * simpleList->objectCount);
-		}
-		else
-			simpleList->objects = (void**)realloc(simpleList->objects, sizeof(void*) * simpleList->objectLimit);
-		simpleList->doNotFreeRawData = false;
-	}
-	simpleList->objects[simpleList->objectCount] = object;
-	simpleList->objectCount++;
-}
-
-// does not add the object if it is already in the list and returns true if it was added
-bool simpleList_addUniqueFeedback(simpleList_t* simpleList, void* object)
-{
-	for(uint32 i=0; i<simpleList->objectCount; i++)
-	{
-		if( simpleList->objects[i] == object )
-			return false;
-	}
-	// object not found, add item
-	if( simpleList->objectCount == simpleList->objectLimit )
-	{
-		simpleList->objectLimit += (simpleList->objectLimit/2+1)*simpleList->stepScaler;
-		if( simpleList->doNotFreeRawData )
-		{
-			void* oldObjectPtr = simpleList->objects;
-			simpleList->objects = (void**)malloc(sizeof(void*) * simpleList->objectLimit);
-			RtlCopyMemory(simpleList->objects, oldObjectPtr, sizeof(void*) * simpleList->objectCount);
-		}
-		else
-			simpleList->objects = (void**)realloc(simpleList->objects, sizeof(void*) * simpleList->objectLimit);
-		simpleList->doNotFreeRawData = false;
-	}
-	simpleList->objects[simpleList->objectCount] = object;
-	simpleList->objectCount++;
-	return true;
-}
-
-// Never call _remove while parsing through the list!
-bool simpleList_remove(simpleList_t* simpleList, void* object)
-{
-	for(uint32 i=0; i<simpleList->objectCount; i++)
-	{
-		if( simpleList->objects[i] == object )
-		{
-			simpleList->objectCount--;
-			simpleList->objects[i] = simpleList->objects[simpleList->objectCount];
-			return true;
-		}
-	}
-	return false;
-}
-
-void* simpleList_get(simpleList_t* simpleList, sint32 index)
-{
-	return simpleList->objects[index];
-}
-
-
 stream_t *stream_create(streamSettings_t *settings, void *object)
 {
 	stream_t *stream = (stream_t*)malloc(sizeof(stream_t));
@@ -188,21 +114,10 @@ void stream_writeU32(stream_t *stream, uint32 value)
 	stream->settings->writeData(stream->object, (void*)&value, 4);
 }
 
-void stream_writeFloat(stream_t *stream, float value)
-{
-	stream->settings->writeData(stream->object, (void*)&value, 4);
-}
-
 uint32 stream_writeData(stream_t *stream, void *data, int len)
 {
 	return stream->settings->writeData(stream->object, (void*)data, len);
 }
-
-void stream_skipData(stream_t *stream, int len)
-{
-	stream->settings->setSeek(stream->object, len, true);
-}
-
 
 char stream_readS8(stream_t *stream)
 {
@@ -246,13 +161,6 @@ uint32 stream_readU32(stream_t *stream)
 	return value;
 }
 
-unsigned long long stream_readU64(stream_t *stream)
-{
-	unsigned long long value;
-	stream->settings->readData(stream->object, (void*)&value, 8);
-	return value;
-}
-
 float stream_readFloat(stream_t *stream)
 {
 	float value;
@@ -286,92 +194,6 @@ void stream_setSize(stream_t *stream, uint32 size)
 {
 	stream->settings->setSize(stream->object, size);
 }
-
-void stream_writeBits(stream_t* stream, uint8* bitData, uint32 bitCount)
-{
-	for(uint32 i=0; i<bitCount; i++)
-	{
-		uint32 srcByteIndex = i/8;
-		uint32 srcBitIndex = i&7;
-		uint8 bitValue = (bitData[srcByteIndex]>>srcBitIndex)&1;
-		// append bit
-		uint32 dstByteIndex = stream->bitIndex/8;
-		uint32 dstBitIndex = stream->bitIndex&7;
-		stream->bitIndex++;
-		if( bitValue )
-			stream->bitBuffer[dstByteIndex] |= (1<<dstBitIndex);
-		else
-			stream->bitBuffer[dstByteIndex] &= ~(1<<dstBitIndex);
-		if( stream->bitIndex == 4*8 )
-		{
-			// write 4 bytes
-			stream->settings->writeData(stream->object, stream->bitBuffer, 4);
-			stream->bitIndex = 0;
-		}
-	}
-}
-
-void stream_readBits(stream_t* stream, uint8* bitData, uint32 bitCount)
-{
-	uint32 i=0;
-	while( i < bitCount )
-	{
-		while( stream->bitReadBufferState && i < bitCount )
-		{
-			// get source bit
-			uint32 srcByteIndex = stream->bitReadIndex/8;
-			uint32 srcBitIndex = stream->bitReadIndex&7;
-			stream->bitReadIndex++;
-			stream->bitReadBufferState--;
-			uint8 bitValue = (stream->bitReadBuffer[srcByteIndex]>>srcBitIndex)&1;
-			// overwrite dst bit
-			uint32 dstByteIndex = i/8;
-			uint32 dstBitIndex = i&7;
-			stream->bitIndex++;
-			if( bitValue )
-				bitData[dstByteIndex] |= (1<<dstBitIndex);
-			else
-				bitData[dstByteIndex] &= ~(1<<dstBitIndex);
-			i++;
-		}
-		if( stream->bitReadBufferState == 0 )
-		{
-			stream->bitReadBuffer[0] = 0;
-			stream->settings->readData(stream->object, stream->bitReadBuffer, 1);
-			stream->bitReadBufferState += 8;
-			stream->bitReadIndex = 0;
-		}
-	}
-}
-
-uint32 stream_copy(stream_t* dest, stream_t* source, uint32 length)
-{
-	// find ideal copy size
-	uint32 copySize = 1024;
-	if( length >= (2*1024*1024) )		copySize = 256*1024; // Length over 2MB --> 256KB steps
-	else if( length >= (512*1024) )		copySize = 16*1024; // Length over 512KB --> 16KB steps
-	else if( length >= (128*1024) )		copySize = 4*1024; // Length over 128KB --> 4KB steps
-	// alloc copy buffer
-	uint8* copyBuffer = (uint8*)malloc(copySize);
-	// start copy loop
-	uint32 copyAmount = 0;
-	while( length > 0 )
-	{
-		uint32 stepCopy = std::min(length, copySize);
-		uint32 bytesRead = stream_readData(source, copyBuffer, stepCopy);
-		uint32 bytesWritten = stream_writeData(dest, copyBuffer, stepCopy);
-		uint32 tBytes = std::min(bytesRead,bytesWritten);
-		if( tBytes == 0 )
-			break; // error while copying, exit now
-		copyAmount += tBytes;
-		length -= stepCopy;
-	}
-	// free buffer
-	free(copyBuffer);
-	// return amount of successfully transfered bytes
-	return copyAmount;
-}
-
 
 /* memory streams */
 

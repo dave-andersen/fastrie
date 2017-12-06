@@ -2,9 +2,9 @@
 #INT_LIB=mpir
 CXX = g++
 CC = cc
-CXXFLAGS = -Wall -Wextra -std=c++11 -O3 -fomit-frame-pointer  -g -fpermissive
+CXXFLAGS = -Wall -Wunused-function -Wextra -std=c++11 -O3 -fomit-frame-pointer  -g -fpermissive
 
-CFLAGS = -Wall -Wextra -O3 -fomit-frame-pointer -g -fpermissive
+CFLAGS = -Wall -Wunused-function -Wextra -O3 -fomit-frame-pointer -g -fpermissive
 
 
 OSVERSION := $(shell uname -s)

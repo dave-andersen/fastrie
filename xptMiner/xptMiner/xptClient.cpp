@@ -1034,7 +1034,7 @@ bool xptClient_process(xptClient_t* xptClient)
 		if (strstr((char *)xptClient->recvBuffer->buffer, "\n"))
 		{
 			buflen = strlen(xptClient->recvBuffer->buffer);
-			tok = strtok(xptClient->recvBuffer->buffer, "\n");
+			tok = strtok((char *)xptClient->recvBuffer->buffer, "\n");
 			if (!tok) {
 				printf("stratum_recv_line failed to parse a newline-terminated string\n");
 				return false;
