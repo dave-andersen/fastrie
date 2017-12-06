@@ -67,7 +67,7 @@ void xptMiner_submitShare(minerRiecoinBlock_t* block, uint8* nOffset)
 	uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
 	printf("[%02d:%02d:%02d] Share found! (Blockheight: %d)\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, block->height);
 	EnterCriticalSection(&cs_xptClient);
-	if( xptClient == NULL || xptClient_isDisconnected(xptClient, NULL) == true )
+	if( xptClient == NULL || xptClient_isDisconnected(xptClient))
 	{
 		printf("Share submission failed - No connection to server\n");
 		LeaveCriticalSection(&cs_xptClient);
@@ -249,7 +249,7 @@ void xptMiner_xptQueryWorkLoop()
 		if( currentTick >= timerPrintDetails )
 		{
 			// print details only when connected
-			if( xptClient_isDisconnected(xptClient, NULL) == false )
+			if( !xptClient_isDisconnected(xptClient) )
 			{
 				uint32 passedSeconds = (uint32)time(NULL) - miningStartTime;
 
@@ -274,7 +274,7 @@ void xptMiner_xptQueryWorkLoop()
 			timerPrintDetails = currentTick + 8000;
 		}
 		// check stats
-		if( xptClient_isDisconnected(xptClient, NULL) == false )
+		if( !xptClient_isDisconnected(xptClient))
 		{
 			EnterCriticalSection(&cs_xptClient);
 			xptClient_process(xptClient);

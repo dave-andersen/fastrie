@@ -1,5 +1,6 @@
-#include"global.h"
+#include "global.h"
 #include <signal.h>
+
 simpleList_t* simpleList_create(sint32 initialLimit)
 {
 	simpleList_t* simpleList = (simpleList_t*)malloc(sizeof(simpleList_t));
@@ -12,28 +13,6 @@ simpleList_t* simpleList_create(sint32 initialLimit)
 	simpleList->stepScaler = 1;
 	return simpleList;
 }
-
-void simpleList_create(simpleList_t* simpleList, sint32 initialLimit)
-{
-	RtlZeroMemory(simpleList, sizeof(simpleList_t));
-	if( initialLimit == 0 ) initialLimit = 4;
-	simpleList->objectLimit = initialLimit;
-	simpleList->objects = (void**)malloc(sizeof(void*) * simpleList->objectLimit);
-	simpleList->isPreallocated = true;
-	simpleList->stepScaler = 1;
-}
-
-void simpleList_create(simpleList_t* simpleList, sint32 initialLimit, void** rawArray)
-{
-	RtlZeroMemory(simpleList, sizeof(simpleList_t));
-	if( initialLimit == 0 ) initialLimit = 4;
-	simpleList->objectLimit = initialLimit;
-	simpleList->objects = rawArray;
-	simpleList->doNotFreeRawData = true;
-	simpleList->isPreallocated = true;
-	simpleList->stepScaler = 1;
-}
-
 
 // does not automatically free the subitems
 void simpleList_free(simpleList_t* simpleList)
@@ -84,21 +63,6 @@ void stream_destroy(stream_t *stream)
 }
 
 /* writing */
-void stream_writeS8(stream_t *stream, char value)
-{
-	stream->settings->writeData(stream->object, (void*)&value, 1);
-}
-
-void stream_writeS16(stream_t *stream, short value)
-{
-	stream->settings->writeData(stream->object, (void*)&value, 2);
-}
-
-void stream_writeS32(stream_t *stream, int value)
-{
-	stream->settings->writeData(stream->object, (void*)&value, 4);
-}
-
 void stream_writeU8(stream_t *stream, uint8 value)
 {
 	stream->settings->writeData(stream->object, (void*)&value, 1);
@@ -126,37 +90,9 @@ char stream_readS8(stream_t *stream)
 	return value;
 }
 
-short stream_readS16(stream_t *stream)
-{
-	short value;
-	stream->settings->readData(stream->object, (void*)&value, 2);
-	return value;
-}
-
 int stream_readS32(stream_t *stream)
 {
 	int value;
-	stream->settings->readData(stream->object, (void*)&value, 4);
-	return value;
-}
-
-uint8 stream_readU8(stream_t *stream)
-{
-	uint8 value;
-	stream->settings->readData(stream->object, (void*)&value, 1);
-	return value;
-}
-
-uint16 stream_readU16(stream_t *stream)
-{
-	uint16 value;
-	stream->settings->readData(stream->object, (void*)&value, 2);
-	return value;
-}
-
-uint32 stream_readU32(stream_t *stream)
-{
-	uint32 value;
 	stream->settings->readData(stream->object, (void*)&value, 4);
 	return value;
 }
@@ -178,21 +114,11 @@ void stream_setSeek(stream_t *stream, uint32 seek)
 	stream->settings->setSeek(stream->object, seek, false);
 }
 
-uint32 stream_getSeek(stream_t *stream)
-{
-	return stream->settings->getSeek(stream->object);
-}
-
 uint32 stream_getSize(stream_t *stream)
 {
 	if( stream->settings->getSize == NULL )
 		return 0xFFFFFFFF;
 	return stream->settings->getSize(stream->object);
-}
-
-void stream_setSize(stream_t *stream, uint32 size)
-{
-	stream->settings->setSize(stream->object, size);
 }
 
 /* memory streams */
@@ -508,18 +434,4 @@ void* streamEx_map(stream_t* stream, sint32* size)
 	void* mem = malloc(rSize);
 	stream_readData(stream, (void*)mem, rSize);
 	return mem;
-}
-
-sint32 streamEx_readStringNT(stream_t* stream, char* str, uint32 strSize)
-{
-	if (strSize == 0) { return -1; }
-	
-	for(uint32 i=0; i<strSize-1; i++)
-	{
-		str[i] = stream_readS8(stream);
-		if( str[i] == '\0' )
-			return i-1;
-	}
-	str[strSize-1] = '\0';
-	return strSize-1;
 }

@@ -98,7 +98,7 @@ void bitclient_calculateMerkleRoot(uint8* txHashes, uint32 numberOfTxHashes, uin
 				sha256_update(&sha256_ctx, hashData, 32*2);
 				sha256_final(&sha256_ctx, hashData);
 			}
-			char *hash2str = bin2hex((char *)hashData, 32);
+			char *hash2str = bin2hex((const unsigned char *)hashData, 32);
 			free(hash2str);
 		}
 		memcpy(merkleRoot, hashData, 32);

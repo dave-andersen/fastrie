@@ -73,13 +73,13 @@ typedef struct
 // connection setup
 xptClient_t* xptClient_create();
 bool xptClient_connect(xptClient_t* xptClient, generalRequestTarget_t* target);
-void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, char* walletAddress, uint16 integerFee, bool isMaxCoinAddress);
+void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, const char* walletAddress, uint16 integerFee, bool isMaxCoinAddress);
 void xptClient_free(xptClient_t* xptClient);
 void xptClient_forceDisconnect(xptClient_t* xptClient);
 
 // connection processing
 bool xptClient_process(xptClient_t* xptClient); // needs to be called in a loop
-bool xptClient_isDisconnected(xptClient_t* xptClient, char** reason);
+bool xptClient_isDisconnected(xptClient_t* xptClient);
 bool xptClient_isAuthenticated(xptClient_t* xptClient);
 void xptClient_foundShare(xptClient_t* xptClient, xptShareToSubmit_t* xptShareToSubmit);
 

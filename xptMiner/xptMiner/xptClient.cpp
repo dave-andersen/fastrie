@@ -286,7 +286,7 @@ const sint8 base58Decode[] =
  * dataOut should have at least 1/2 the size of base58Input
  * inputLength must not exceed 200
  */
-bool xptClient_decodeBase58(char* base58Input, sint32 inputLength, uint8* dataOut, sint32* dataOutLength)
+bool xptClient_decodeBase58(const char* base58Input, sint32 inputLength, uint8* dataOut, sint32* dataOutLength)
 {
 	if( inputLength == 0 )
 		return false;
@@ -406,7 +406,7 @@ bool xptClient_decodeBase58(char* base58Input, sint32 inputLength, uint8* dataOu
  * You may want to consider re-implementing this mechanism in a different way if you plan to
  * have at least some basic level of protection from reverse engineers that try to remove your fee (if closed source)
  */
-void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, char* walletAddress, uint16 integerFee, bool isMaxCoinAddress)
+void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, const char* walletAddress, uint16 integerFee, bool isMaxCoinAddress)
 {
 	uint8 walletAddressRaw[256];
 	sint32 walletAddressRawLength = sizeof(walletAddressRaw);
@@ -548,7 +548,7 @@ static const char *get_stratum_session_id(json_t *val)
 
 void stratumClient_sendSubscribe(xptClient_t* sctx)
 {
-	char *s = malloc(128 + (sctx->blockWorkInfo.session_id ? strlen(sctx->blockWorkInfo.session_id) : 0));
+	char *s = (char *)malloc(128 + (sctx->blockWorkInfo.session_id ? strlen(sctx->blockWorkInfo.session_id) : 0));
 	if (sctx->blockWorkInfo.session_id)
 		sprintf(s, "{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": [\"" USER_AGENT "\", \"%s\"]}\n", sctx->blockWorkInfo.session_id);
 	else
@@ -696,7 +696,7 @@ static void stratum_buffer_append(xptClient_t *sctx, const char *s)
 {
 	size_t old, newSize;
 
-	old = strlen(sctx->recvBuffer->buffer);
+	old = strlen((const char *)sctx->recvBuffer->buffer);
 	newSize = old + strlen(s) + 1;
 	if (newSize >= sctx->recvIndex) {
 		sctx->recvIndex = newSize + (RBUFSIZE - (newSize % RBUFSIZE));
@@ -1098,7 +1098,6 @@ bool xptClient_process(xptClient_t* xptClient)
 		// validate header size
 		if( packetDataSize >= (1024*1024*2-4) )
 		{
-			// packets larger than 4mb are not allowed
 			printf("xptServer_receiveData(): Packet exceeds 2mb size limit\n");
 			return false;
 		}
@@ -1141,7 +1140,7 @@ bool xptClient_process(xptClient_t* xptClient)
  * Returns true if the xptClient connection was disconnected from the server or should disconnect because login was invalid or awkward data received
  * Parameter reason is currently unused.
  */
-bool xptClient_isDisconnected(xptClient_t* xptClient, char** reason)
+bool xptClient_isDisconnected(xptClient_t* xptClient)
 {
 	return xptClient->disconnected;
 }

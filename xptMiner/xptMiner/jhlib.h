@@ -62,26 +62,17 @@ void		stream_destroy	(stream_t *stream);
 // stream reading
 
 char stream_readS8(stream_t *stream);
-short stream_readS16(stream_t *stream);
 int stream_readS32(stream_t *stream);
-uint8 stream_readU8(stream_t *stream);
-uint16 stream_readU16(stream_t *stream);
-uint32 stream_readU32(stream_t *stream);
 float stream_readFloat(stream_t *stream);
 uint32 stream_readData(stream_t *stream, void *data, int len);
 // stream writing
-void stream_writeS8(stream_t *stream, char value);
-void stream_writeS16(stream_t *stream, short value);
-void stream_writeS32(stream_t *stream, int value);
 void stream_writeU8(stream_t *stream, uint8 value);
 void stream_writeU16(stream_t *stream, uint16 value);
 void stream_writeU32(stream_t *stream, uint32 value);
 uint32 stream_writeData(stream_t *stream, void *data, int len);
 // stream other
 void stream_setSeek(stream_t *stream, uint32 seek);
-uint32 stream_getSeek(stream_t *stream);
 uint32 stream_getSize(stream_t *stream);
-void stream_setSize(stream_t *stream, uint32 size);
 
 /* stream ex */
 
@@ -91,4 +82,3 @@ stream_t* streamEx_createSubstream(stream_t* mainstream, sint32 startOffset, sin
 
 // misc
 void* streamEx_map(stream_t* stream, sint32* size);
-sint32 streamEx_readStringNT(stream_t* stream, char* str, uint32 strSize);
