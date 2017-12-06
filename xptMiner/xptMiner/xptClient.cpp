@@ -406,7 +406,7 @@ bool xptClient_decodeBase58(const char* base58Input, sint32 inputLength, uint8* 
  * You may want to consider re-implementing this mechanism in a different way if you plan to
  * have at least some basic level of protection from reverse engineers that try to remove your fee (if closed source)
  */
-void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, const char* walletAddress, uint16 integerFee, bool isMaxCoinAddress)
+void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, const char* walletAddress, uint16 integerFee)
 {
 	uint8 walletAddressRaw[256];
 	sint32 walletAddressRawLength = sizeof(walletAddressRaw);
