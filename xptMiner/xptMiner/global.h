@@ -113,7 +113,6 @@ typedef struct
 
 #define STRATUM_JOB_ID_MAX_LEN 32
 
-#include "xptServer.h"
 #include "xptClient.h"
 
 #include "sha2.h"
@@ -124,10 +123,6 @@ typedef struct
 typedef struct  
 {
 	generalRequestTarget_t requestTarget;
-	// GPU
-	bool useGPU; // enable OpenCL
-	// GPU (MaxCoin specific)
-
 	float donationPercent;
 }minerSettings_t;
 
@@ -187,8 +182,6 @@ typedef struct
 	sint32 port;
 	sint32 numThreads;
 	uint32 ptsMemoryMode;
-	// GPU / OpenCL options
-	bool useGPU;
 	// mode option
 	uint32 mode;
 	float donationPercent;

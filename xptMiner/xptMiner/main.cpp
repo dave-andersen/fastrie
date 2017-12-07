@@ -462,10 +462,6 @@ void xptMiner_parseCommandline(int argc, char **argv)
 			}
 			cIdx++;
 		}
-		else if( memcmp(argument, "-gpu", 5)==0 )
-		{
-			commandlineInput.useGPU = true;
-		}
 		else if( memcmp(argument, "-m", 3)==0 )
 		{
 			commandlineInput.protocol = PROTOCOL_STRATUM;
@@ -510,7 +506,6 @@ int main(int argc, char** argv)
 	commandlineInput.host = "ypool.net";
 	srand(getTimeMilliseconds());
 	commandlineInput.port = 8080 + (rand()%8); // use random port between 8080 and 8087
-	commandlineInput.useGPU = false;
   uint32_t numcpu = 1; // in case we fall through;	
 #if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
   int mib[4];
@@ -548,7 +543,6 @@ sysctl(mib, 2, &numcpu, &len, NULL, 0);
 	commandlineInput.numThreads = numcpu;
 	commandlineInput.numThreads = std::min(std::max(commandlineInput.numThreads, 1), 4);
 	xptMiner_parseCommandline(argc, argv);
-	minerSettings.useGPU = commandlineInput.useGPU;
 	printf("----------------------------\n");
 	printf("  xptMiner/ric/dga (%s)\n", minerVersionString);
 	printf("  author: jh00 (xptminer originally for http://ypool.net) dga (ric core)\n");
@@ -570,11 +564,7 @@ sysctl(mib, 2, &numcpu, &len, NULL, 0);
 	printf("Using %d +1 CPU threads\n", commandlineInput.numThreads);
 	commandlineInput.numThreads += 1;
 
-	if( commandlineInput.useGPU ) {
-		printf("Using GPU if possible\n");
-	}
-	
-	printf("\nFee Percentage:  %.2f%%. To set, use \"-d\" flag e.g. \"-d 2.5\" is 2.5%% donation\n\n", commandlineInput.donationPercent);
+	printf("\n(No fee in Stratum) Fee Percentage:  %.2f%%. To set, use \"-d\" flag e.g. \"-d 2.5\" is 2.5%% donation\n\n", commandlineInput.donationPercent);
 #ifdef _WIN32
 	// set priority to below normal
 	SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
