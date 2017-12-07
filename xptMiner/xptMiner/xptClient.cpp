@@ -254,21 +254,6 @@ void xptClient_forceDisconnect(xptClient_t* xptClient)
 	xptClient->hasWorkData = false;
 }
 
-/*
- * Disconnects and frees the xptClient instance
- */
-void xptClient_free(xptClient_t* xptClient)
-{
-	xptPacketbuffer_free(xptClient->sendBuffer);
-	xptPacketbuffer_free(xptClient->recvBuffer);
-	if( xptClient->clientSocket != SOCKET_ERROR )
-	{
-		closesocket(xptClient->clientSocket);
-	}
-	simpleList_free(xptClient->list_shareSubmitQueue);
-	free(xptClient);
-}
-
 const sint8 base58Decode[] =
 {
 	-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
@@ -1137,20 +1122,13 @@ bool xptClient_process(xptClient_t* xptClient)
 }
 
 /*
- * Returns true if the xptClient connection was disconnected from the server or should disconnect because login was invalid or awkward data received
- * Parameter reason is currently unused.
+ * Returns true if the xptClient connection was disconnected from the
+ * server or should disconnect because login was invalid or awkward
+ * data received
  */
 bool xptClient_isDisconnected(xptClient_t* xptClient)
 {
 	return xptClient->disconnected;
-}
-
-/*
- * Returns true if the worker login was successful
- */
-bool xptClient_isAuthenticated(xptClient_t* xptClient)
-{
-	return (xptClient->clientState == XPT_CLIENT_STATE_LOGGED_IN);
 }
 
 void xptClient_foundShare(xptClient_t* xptClient, xptShareToSubmit_t* xptShareToSubmit)

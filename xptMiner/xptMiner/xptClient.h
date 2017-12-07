@@ -74,13 +74,11 @@ typedef struct
 xptClient_t* xptClient_create();
 bool xptClient_connect(xptClient_t* xptClient, generalRequestTarget_t* target);
 void xptClient_addDeveloperFeeEntry(xptClient_t* xptClient, const char* walletAddress, uint16 integerFee);
-void xptClient_free(xptClient_t* xptClient);
 void xptClient_forceDisconnect(xptClient_t* xptClient);
 
 // connection processing
 bool xptClient_process(xptClient_t* xptClient); // needs to be called in a loop
 bool xptClient_isDisconnected(xptClient_t* xptClient);
-bool xptClient_isAuthenticated(xptClient_t* xptClient);
 void xptClient_foundShare(xptClient_t* xptClient, xptShareToSubmit_t* xptShareToSubmit);
 
 // never send this directly
