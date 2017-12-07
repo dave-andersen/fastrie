@@ -129,6 +129,7 @@ void riecoin_init(uint64_t sieveMax, int numThreads)
 	inverts = (uint32_t *)calloc(sizeof(uint32_t), riecoin_primeTestSize);
 	if (inverts == NULL) {
 	  perror("could not malloc inverts");
+	  exit(-1);
 	}
 
 	mpz_t z_tmp, z_p;
@@ -415,19 +416,17 @@ void verify_thread() {
 	  mpz_powm(z_ft_r, z_ft_b, z_ft_n, z_temp);
 	  if (mpz_cmp_ui(z_ft_r, 1) == 0) {
 	    nPrimes++;
+	    totalChainCount[nPrimes]++;
 	  }
 	  int candidatesRemaining = 5-i;
 	  if ((nPrimes + candidatesRemaining) < 4) { continue; }
 	}
 	
-	/* These statistics are a little confusing because of the interaction
+	/* The statistics are a little confusing because of the interaction
 	 * with early-exit above.  They overcount relative to finding consecutive
 	 * primes, but undercount relative to counting all primes.  But they're
 	 * still useful for benchmarking within a variant of the program with
 	 * all else held equal. */
-	if (nPrimes >= 2) total2ChainCount++;
-	if (nPrimes >= 3) total3ChainCount++;
-	if (nPrimes >= 4) total4ChainCount++;
 	
 	if (nPrimes < 4) continue;
 	

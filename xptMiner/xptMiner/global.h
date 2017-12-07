@@ -166,9 +166,7 @@ void xptMiner_submitShare(minerRiecoinBlock_t* block, uint8* nOffset);
 extern volatile uint32 totalCollisionCount;
 extern volatile uint32 totalShareCount;
 extern volatile uint32 totalRejectedShareCount;
-extern volatile uint32 total2ChainCount;
-extern volatile uint32 total3ChainCount;
-extern volatile uint32 total4ChainCount;
+extern volatile uint32 totalChainCount[7];
 
 
 extern volatile uint32 monitorCurrentBlockHeight;

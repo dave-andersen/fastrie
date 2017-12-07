@@ -19,10 +19,7 @@ volatile uint32 monitorCurrentBlockTime; // keeps track of current block time, u
 // stats
 volatile uint32 totalShareCount = 0;
 volatile uint32 totalRejectedShareCount = 0;
-volatile uint32 total2ChainCount = 0;
-volatile uint32 total3ChainCount = 0;
-volatile uint32 total4ChainCount = 0;
-
+volatile uint32 totalChainCount[7];
 
 commandlineInput_t commandlineInput;
 
@@ -255,18 +252,16 @@ void xptMiner_xptQueryWorkLoop()
 
 				if( workDataSource.algorithm == ALGORITHM_RIECOIN )
 				{
+					float speedRate[7];  // for chain length[i]
 					// speed is represented as knumber/s (in steps of 0x1000)
-					float speedRate_2ch = 0.0f;
-					float speedRate_3ch = 0.0f;
-					float speedRate_4ch = 0.0f;
 
 					if( passedSeconds > 5 )
 					{
-						speedRate_2ch = (double)total2ChainCount * 4096.0 / (double)passedSeconds / 1000.0;
-						speedRate_3ch = (double)total3ChainCount * 4096.0 / (double)passedSeconds / 1000.0;
-						speedRate_4ch = (double)total4ChainCount * 4096.0 / (double)passedSeconds / 1000.0;
+						for (int i = 2; i <=4; i++) {
+							speedRate[i] = (double)totalChainCount[i] * 4096.0 / (double) passedSeconds / 1000.0;
+						}
 					}
-					printf("[%02d:%02d:%02d] 2ch/s: %.4lf 3ch/s: %.4lf 4ch/s: %.4lf Shares total: %d / %d\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, speedRate_2ch, speedRate_3ch, speedRate_4ch, totalShareCount, totalShareCount-totalRejectedShareCount);
+					printf("[%02d:%02d:%02d] 2ch/s: %.4lf 3ch/s: %.4lf 4ch/s: %.4lf Shares total: %d / %d\n", (passedSeconds/3600)%60, (passedSeconds/60)%60, (passedSeconds)%60, speedRate[2], speedRate[3], speedRate[4], totalShareCount, totalShareCount-totalRejectedShareCount);
 					fflush(stdout);
 				}
 
@@ -354,9 +349,7 @@ void xptMiner_xptQueryWorkLoop()
 				{
 					printf("Connected to server using x.pushthrough(xpt) protocol\n");
 				}
-				total2ChainCount = 0;
-				total3ChainCount = 0;
-				total4ChainCount = 0;
+				for (int i = 0; i < 7; i++) totalChainCount[i] = 0;
 			}
 			Sleep(1);
 		}
